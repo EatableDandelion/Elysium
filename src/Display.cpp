@@ -31,9 +31,7 @@ namespace Elysium
 		std::cout << "Window created" << std::endl;
 		m_isClosed = false;
 
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_BACK);
+		std::cout << glGetString(GL_VERSION) << std::endl;
 	}
 
 	Display::~Display()
@@ -59,19 +57,10 @@ namespace Elysium
 		}
 	}
 
-	void Display::clear(const float r, const float g, 
-					   const float b, const float a)
-	{
-		glClearColor(r, g, b, a);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	}
-
-
 	bool Display::isClosed() const
 	{
 		return m_isClosed;
 	}
-
 
 	int Display::getWidth() const
 	{

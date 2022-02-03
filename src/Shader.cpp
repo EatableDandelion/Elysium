@@ -7,11 +7,11 @@ namespace Elysium
 		glUseProgram(m_program);
 	}
 			
-	void Shader::updateUniforms(const Circe::Transform3& transform,
+	void Shader::updateUniforms(const Circe::Mat44& modelMatrix,
 								const Camera& camera)
 	{
 		Circe::Mat44 mvp = camera.getViewProjection()
-							* transform.getTransformMatrix();
+							* modelMatrix;
 
 		updateUniform("MVP", mvp);
 	}
@@ -35,6 +35,12 @@ namespace Elysium
 		std::vector<float> v({value(0), value(1), value(2)});
 
 		glUniform3fv(getUniformLocation(name), 1, &v[0]);
+	}
+
+	void Shader::updateUniform(const std::string& name,
+							   const Texture_Map texture_map)
+	{
+		glUniform1i(getUniformLocation(name), (int)texture_map);
 	}
 
 	void Shader::updateUniform(const std::string& name, 

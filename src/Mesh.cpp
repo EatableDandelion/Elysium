@@ -27,13 +27,10 @@ namespace Elysium
 			CIRCE_ERROR("Could not open "+fileName+" mesh.");
 		}
 		
-		std::map<unsigned int, TempVertex> vertices;
-		std::map<unsigned int, Circe::Vec<3>> normals;
-		std::map<unsigned int, Circe::Vec<2>> textCoords;
+		std::vector<TempVertex> vertices;
+		std::vector<Circe::Vec<3>> normals;
+		std::vector<Circe::Vec<2>> textCoords;
 		std::vector<unsigned int> resultIndices;
-		unsigned int vIndex(1);
-		unsigned int vtIndex(1);
-		unsigned int vnIndex(1);
 		bool hasNormals = false;
 		bool hasTextures = false;
 		
@@ -45,24 +42,21 @@ namespace Elysium
 			{
 				TempVertex vertex;
 				fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z);
-				vertices[vIndex] = vertex;
-				vIndex++;				
+				vertices.push_back(vertex);
 			}
 			else if(strcmp(lineStart, "vt")==0) //Texture coords
 			{
 				float u, v;
 				fscanf(file, "%f %f\n", &u, &v);
-				textCoords[vtIndex]=Circe::Vec<2>(u, v);
-				vtIndex++;
+				textCoords.push_back(Circe::Vec<2>(u, v));
 				hasTextures = true;
 			}
 			else if(strcmp(lineStart, "vn")==0) //Normal coords
 			{
 				float nx, ny, nz;
 				fscanf(file, "%f %f %f\n", &nx, &ny, &nz);
-				normals[vnIndex]=Circe::Vec<3>(nx, ny, nz);
+				normals.push_back(Circe::Vec<3>(nx, ny, nz));
 				hasNormals = true;
-				vnIndex++;
 			}
 			else if(strcmp(lineStart, "f")==0) //Facets
 			{
@@ -70,13 +64,22 @@ namespace Elysium
 				{
 					unsigned int p[4], u[4], n[4];
 					
-					int matches = fscanf(file, "%d/%d/%d %d/%d/%d %d/%d/%d %d/%d/%d\n", &p[0], &u[0], &n[0], &p[1], &u[1], &n[1], &p[2], &u[2], &n[2], &p[3], &u[3], &n[3]);
-					if(matches == 9 || matches ==12){//It's a triangle or a quad
+					int matches = fscanf(file,
+						"%d/%d/%d %d/%d/%d %d/%d/%d %d/%d/%d\n", 
+												&p[0], &u[0], &n[0], 
+												&p[1], &u[1], &n[1], 
+												&p[2], &u[2], &n[2], 
+												&p[3], &u[3], &n[3]);
+
+					if(matches == 9 || matches ==12)
+					{//It's a triangle or a quad
 						for(int i = 0; i<(matches/3); i++)
-						{						
+						{
+							p[i]--; u[i]--; n[i]--;
+
 							Circe::Vec<2> uv = textCoords[u[i]];
 							Circe::Vec<3> normal = normals[n[i]];
-							
+
 							vertices[p[i]].u += uv(0);
 							vertices[p[i]].v += uv(1);
 							vertices[p[i]].textCount++;
@@ -85,22 +88,21 @@ namespace Elysium
 							vertices[p[i]].ny += normal(1);
 							vertices[p[i]].nz += normal(2);
 							vertices[p[i]].normalCount++;
-
-							
 						}
 						
-						resultIndices.push_back(p[0]-1);
-						resultIndices.push_back(p[1]-1);
-						resultIndices.push_back(p[2]-1);
+						resultIndices.push_back(p[0]);
+						resultIndices.push_back(p[1]);
+						resultIndices.push_back(p[2]);
 						if(matches == 12)
 						{
-							resultIndices.push_back(p[0]-1);
-							resultIndices.push_back(p[2]-1);
-							resultIndices.push_back(p[3]-1);
+							resultIndices.push_back(p[0]);
+							resultIndices.push_back(p[2]);
+							resultIndices.push_back(p[3]);
 						}
 						
 					}else{
-						CIRCE_ERROR("Mesh "+fileName+" format not handled.");
+						CIRCE_ERROR("Mesh " + fileName
+									+ " format not handled.");
 						break;
 					}
 
@@ -115,9 +117,8 @@ namespace Elysium
 		}
 		
 		std::vector<Vertex> resultVertices;
-		for(std::pair<unsigned int, TempVertex> vertexPair : vertices)
+		for(TempVertex vertex : vertices)
 		{
-			TempVertex vertex(vertexPair.second);
 			Vertex resultVertex;
 			resultVertex.x = vertex.x;
 			resultVertex.y = vertex.y;
@@ -136,7 +137,6 @@ namespace Elysium
 		
 		return meshData;
 	}
-	
 	
 	Mesh MeshLoader::load(const std::string& fileName)
 	{	
@@ -196,6 +196,6 @@ namespace Elysium
 		
 		return mesh;
 	}
-		
+
 }
 

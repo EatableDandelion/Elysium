@@ -2,6 +2,15 @@
 
 namespace Elysium
 {
+	Model::Model()
+	{
+		m_transform = std::make_shared<Circe::Transform3>();
+	}
+
+	Model::Model(const std::shared_ptr<Circe::Transform3> transform):
+		m_transform(transform)
+	{}
+
 	void Model::draw()
 	{
 		for(TexturedMesh tMesh : m_tMeshes)
@@ -11,6 +20,16 @@ namespace Elysium
 		}
 	}
 
+	std::shared_ptr<Circe::Transform3> Model::getTransform() const
+	{
+		return m_transform;
+	}
+
+	void Model::setTransform
+					(const std::shared_ptr<Circe::Transform3> transform)
+	{
+		m_transform = transform;
+	}
 	
 	Model ModelLoader::load(const std::string& fileName)
 	{

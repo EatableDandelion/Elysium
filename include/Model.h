@@ -23,10 +23,20 @@ namespace Elysium
 	class Model
 	{
 		public:
+			Model();
+
+			Model(const std::shared_ptr<Circe::Transform3> transform);
+
 			void draw();
+
+			std::shared_ptr<Circe::Transform3> getTransform() const;
+
+			void setTransform
+					(const std::shared_ptr<Circe::Transform3> transform);
 
 		private:
 			std::vector<TexturedMesh> m_tMeshes;
+			std::shared_ptr<Circe::Transform3> m_transform;
 
 			friend class ModelLoader;
 	};

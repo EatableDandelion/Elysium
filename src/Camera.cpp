@@ -2,8 +2,8 @@
 
 namespace Elysium
 {
-	Camera::Camera(const Circe::Vec3& position, float fov, float AR,
-				   float zNear, float zFar): m_transform(position)
+	Camera::Camera(float fov, float AR,
+				   float zNear, float zFar):m_transform(Circe::Vec3(0,0,0))
 	{
 		m_perspective = Circe::perspectiveProjection(fov, AR, zNear, zFar);
 	}

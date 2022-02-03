@@ -1,8 +1,10 @@
+#pragma once
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <GL/glew.h>
 #include "Camera.h"
+#include "Texture.h"
 
 namespace Elysium
 {
@@ -11,10 +13,11 @@ namespace Elysium
 		public:
 			void bind();
 
-			void updateUniforms(const Circe::Transform3& transform, 
+			void updateUniforms(const Circe::Mat44& transform, 
 								const Camera& camera);
 
-			void updateUniform(const std::string& name, const float& value);
+			void updateUniform(const std::string& name, 
+							   const float& value);
 
 			void updateUniform(const std::string& name, 
 							   const Circe::Vec2& value);
@@ -24,6 +27,9 @@ namespace Elysium
 
 			void updateUniform(const std::string& name, 
 							   const Circe::Mat44& value);
+	
+			void updateUniform(const std::string& name, 
+							   const Texture_Map value);
 		
 		private:
 			GLuint m_program;

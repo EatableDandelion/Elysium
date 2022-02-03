@@ -32,6 +32,7 @@ namespace Elysium
 				std::string name = m_folderLocation+fileName;
 				if(m_resources.count(name))
 				{
+					CIRCE_INFO("Resource "+fileName+" retrieved.");
 					return m_resources[name];
 				}
 				else
