@@ -57,19 +57,6 @@ namespace Elysium
 	};
 
 
-	class Material
-	{
-		public:
-			void bind();
-
-			void addTexture(const Texture_Map& map, 
-							const Texture& texture);
-
-		private:
-			std::unordered_map<Texture_Map, Texture> textures;
-			unsigned int index[NB_TEXTURE_MAPS];
-	};
-
 	class FrameBuffer
 	{
 		public:
@@ -82,11 +69,17 @@ namespace Elysium
 
 			void write();
 
+			void applyDepthBuffer();
+
 		private:
 			GLuint m_fbo;
 			GLuint m_rbo;
+			unsigned int m_attachments[5];	
+			unsigned int m_nbTextures;
 			std::vector<Texture> m_textures;
 			TextureLoader m_textureLoader;
+			int m_width;
+			int m_height;
 	};
 }
 

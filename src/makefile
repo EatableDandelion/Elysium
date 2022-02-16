@@ -1,8 +1,8 @@
 NAME=Elysium
 
 IDIR =../include
-CC=g++
-CFLAGS= -std=c++17 -I$(IDIR)
+CC=g++ 
+CFLAGS= -std=c++17 -g -I$(IDIR)
 
 ODIR=obj
 

@@ -9,36 +9,49 @@
 #include "Texture.h"
 #include "Display.h"
 #include "Assets.h"
+#include "Input.h"
 
 namespace Elysium
 {
+	typedef std::uint8_t RenderBit;
+
 	class Renderer
 	{
 		public:
-			Renderer(const int width, const int height, const int nbBuffers);
+			Renderer(const int width, 
+					 const int height, 
+					 const int nbBuffers);
 
-			Camera getCamera() const;
+			Renderer(const Renderer&) = delete;
+			Renderer& operator=(const Renderer&) = delete;
 
 			Camera& getCamera();
 
-			void readFrameBuffer();	
+	//		Input& getInput();
 
-			void writeFrameBuffer();	
+			void enable(const RenderBit kw);
 
-			void writeDepthBuffer(const bool value);
+			void disable(const RenderBit kw);
 
-			void readDepthBuffer(const bool value);
+			void clear(const float color, const bool diffuse = true, 
+					   const bool depth = true, const bool stencil = true);
 
-			void clear(const float color);
+			void applyDepthBuffer();
+
+			Circe::Vec2 getScreenSize() const;
+
+			static constexpr RenderBit BLEND		{1 << 0};
+			static constexpr RenderBit DEPTH_READ	{1 << 1};
+			static constexpr RenderBit DEPTH_WRITE	{1 << 2};
+			static constexpr RenderBit STENCIL_READ	{1 << 3};
+			static constexpr RenderBit STENCIL_WRITE{1 << 4};
+			static constexpr RenderBit FRAMEBUFFER	{1 << 5};
+			static constexpr RenderBit FACE_CULLING	{1 << 6};
 
 		private:
 			Camera m_camera;
 			FrameBuffer m_frame;
-
-			/** Prevent object copy */ 
-			Renderer(const Renderer& other);
-
-			Renderer& operator=(const Renderer& other);
+			Circe::Vec2 m_screenSize;
 	};
 
 	class RenderingPass
@@ -48,8 +61,7 @@ namespace Elysium
 			virtual void init(Renderer& renderer, Shader& shader) = 0;
 
 			/** Set up the pass, draw all the models, finish pass */
-			virtual void draw(Renderer& renderer, Shader& shader, 
-							  const std::vector<Model>& models) = 0;
+			virtual void draw(Renderer& renderer, Shader& shader) = 0;
 	};
 
 	class GeometryPass : public RenderingPass
@@ -57,19 +69,11 @@ namespace Elysium
 		public:
 			virtual void init(Renderer& renderer, Shader& shader);
 
-			virtual void draw(Renderer& renderer, Shader& shader, 
-						  	  const std::vector<Model>& models);
-	};
-
-	class FinalPass : public RenderingPass
-	{
-		public:
-			virtual void init(Renderer& renderer, Shader& shader);
-
-			virtual void draw(Renderer& renderer, Shader& shader, 
-						  	  const std::vector<Model>& models);
+			virtual void draw(Renderer& renderer, Shader& shader);
+			
+			void addModel(const Model& model);
 
 		private:
-			Mesh screen;
+			std::vector<Model> m_models;
 	};
 }

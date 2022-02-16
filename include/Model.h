@@ -9,30 +9,46 @@
 #include <assimp/postprocess.h>
 #include "Mesh.h"
 #include "Texture.h"
+#include "Shader.h"
 
 //Source for model: https://learnopengl.com/Model-Loading/Model
 
 namespace Elysium
 {
+	class Material
+	{
+		public:
+			void bind();
+
+			void addTexture(const Texture_Map& map, 
+							const Texture& texture);
+	
+		private:
+			std::unordered_map<Texture_Map, Texture> m_textures;
+			unsigned int index[NB_TEXTURE_MAPS];
+	};
+
 	struct TexturedMesh
 	{
 		Mesh m_mesh;
 		Material m_material;
 	};
 
-	class Model
+	class Model : public UniformMap
 	{
 		public:
 			Model();
 
 			Model(const std::shared_ptr<Circe::Transform3> transform);
 
-			void draw();
+			void draw(Shader& shader, const Circe::Mat44& projection);
 
 			std::shared_ptr<Circe::Transform3> getTransform() const;
 
 			void setTransform
 					(const std::shared_ptr<Circe::Transform3> transform);
+
+			void addMesh(const Mesh& mesh);
 
 		private:
 			std::vector<TexturedMesh> m_tMeshes;

@@ -1,106 +1,114 @@
 #pragma once
 
+#include <SDL2/SDL.h>
 #include <vector>
 #include <memory>
+#include <typeinfo>
+#include <typeindex>
 #include <Circe/Circe.h>
 #include "Shader.h"
 #include "Model.h"
 #include "Camera.h"
 #include "RenderingPass.h"
+#include "Input.h"
+#include "Event.h"
 
 namespace Elysium
 {
-	typedef unsigned int PassID;
+	typedef std::type_index PassID;
 
 	class RenderingNode
 	{
 		public:
-			RenderingNode(const Shader& shader, const PassID id);
+			RenderingNode();
 
-			/** Init this pass, calls child pass */
-			void init(Renderer& renderer);
-
-			/** Draw this pass, calls child pass */
-			void draw(Renderer& renderer);
-
-			/** Add a model to render */
-			void addModel(const Model& model);
-
+			RenderingNode(const Shader& shader);
+			
 			/** Add the pass rendered after this one */
-			template<typename Pass>
-			PassID addPass(const Shader& shader)
+			template<typename Pass, typename... Args>
+			void addPass(const Shader& shader, Args&&... args)
 			{
 				if(m_next == nullptr)
 				{
-					m_next = std::make_shared<RenderingNode>(shader,m_id+1);
-					m_next->newPass<Pass>();
-
-					return m_next->getID();
+					m_next = std::make_shared<RenderingNode>(shader);
+					m_next->newPass<Pass>(std::forward<Args>(args)...);
 				}
 				else
 				{
-					return m_next->addPass<Pass>(shader);
+					m_next->addPass<Pass>
+							(shader, std::forward<Args>(args)...);
 				}
 			}
 
 			template<typename Pass>
-			void newPass()
+			std::shared_ptr<Pass> get() const
 			{
-				m_pass = std::make_shared<Pass>();
+				if(m_next == nullptr) 
+					CIRCE_ERROR("Could not find rendering node");
+
+				if(m_next->getID() == std::type_index(typeid(Pass)))
+				{
+					return std::dynamic_pointer_cast<Pass>(m_next->m_pass);
+				}
+				return m_next->get<Pass>();
 			}
 
-			PassID getID() const;
+			/** Init this pass, calls child pass */
+			virtual void init(Renderer& renderer);
 
-			std::shared_ptr<RenderingNode> getRenderingNode
-												(const PassID id) const;
+			/** Draw this pass, calls child pass */
+			virtual void draw(Renderer& renderer);
+
+			template<typename Pass, typename... Args>
+			void newPass(Args&&... as)
+			{
+				m_pass = std::make_shared<Pass>(std::forward<Args>(as)...);
+				m_id = std::type_index(typeid(Pass));
+			}
+	
+		protected:		
+			std::shared_ptr<RenderingNode> m_next;
 
 		private:
 			PassID m_id;
 			Shader m_shader;
-			std::vector<Model> m_models;
-			std::shared_ptr<RenderingNode> m_next;
 			std::shared_ptr<RenderingPass> m_pass;
+
+			PassID getID() const;
 	};
 
-	class RenderingEngine
+	class RenderingEngine : public RenderingNode
 	{
 		public:
 			RenderingEngine(const std::string& name, const int width,
 							const int height, const int nbBuffers);
 
+			RenderingEngine(const RenderingEngine&)=delete;
+			RenderingEngine& operator=(const RenderingEngine&)=delete;
+
 			void init();
 
 			void draw();
-
-			template<typename Pass>
-			PassID addPass(const Shader& shader)
-			{
-				if(m_firstNode == nullptr)
-				{
-					m_firstNode = std::make_shared<RenderingNode>(shader,0);
-					m_firstNode->newPass<Pass>();
-
-					return m_firstNode->getID();
-				}
-				else
-				{
-					return m_firstNode->addPass<Pass>(shader);
-				}
-			}
-
-			std::shared_ptr<RenderingNode> operator()(const PassID id) const;
 	
 			Camera& getCamera();
+
+//			Input& getInput();
 
 			void swapBuffers();
 	
 			bool isClosed() const;
+
+//			void pollInput();
+
+//			Emitter<int>& getKey(const int key);
+
+//			Emitter<Circe::Vec2>& getMouseMotion();
 	
 		private:
+			bool m_terminate = false;
 			bool m_wasInit = false;
 			Display m_display;
 			Renderer m_renderer;
-			std::shared_ptr<RenderingNode> m_firstNode;
 	};
 
 }	

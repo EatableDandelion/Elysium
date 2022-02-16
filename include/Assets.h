@@ -12,9 +12,11 @@ namespace Elysium
 	class ResourceManager
 	{
 		public:
-			ResourceManager(const std::string& folderLocation) 
-				: m_loader(Loader()), m_folderLocation(folderLocation)
+			ResourceManager() : m_loader(Loader())
 			{}
+
+			ResourceManager(const ResourceManager&) = delete;
+			ResourceManager operator=(const ResourceManager&) = delete;
 			
 			virtual ~ResourceManager()
 			{
@@ -23,6 +25,11 @@ namespace Elysium
 					m_loader.unload(resource.second);					
 					CIRCE_INFO("Resource "+resource.first+" unloaded.");
 				}
+			}
+
+			void setFolderLocation(const std::string& folderLocation)
+			{
+				m_folderLocation = folderLocation;
 			}
 			
 			template<typename... Args>

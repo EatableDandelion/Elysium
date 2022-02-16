@@ -12,7 +12,7 @@ in vec2 texCoord;
 
 void main()
 {
-	gPosition = position;
-	gNormal   = vec4(normal, 0.0); 
+	gPosition = vec4(0.5*position.xyz+0.5, 0.0);
+	gNormal   = vec4(0.5*normal+0.5, 0.0); 
 	gDiffuse  = texture2D(diffuse, texCoord);
 }

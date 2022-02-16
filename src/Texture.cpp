@@ -71,7 +71,8 @@ namespace Elysium
 		glDeleteTextures(1, &(texture.m_texture));
 	}
 
-	Texture TextureLoader::newTexture(const int width, const int height) const
+	Texture TextureLoader::newTexture(const int width, const int height) 
+																	const
 	{
 		GLuint id;
 		glGenTextures(1, &id);
@@ -90,41 +91,25 @@ namespace Elysium
 		return Texture(id);
 	}
 
-	void Material::bind()
-	{
-		unsigned int unit = 0;
-		for(std::pair<Texture_Map, Texture> pair : textures)
-		{
-			pair.second.bind(unit);
-			unit++;
-		}
-	}
-
-	void Material::addTexture(const Texture_Map& map, 
-							  const Texture& texture)
-	{
-		textures.insert(std::pair<Texture_Map, Texture>(map, texture));
-		index[map]++;
-	}
-
 	FrameBuffer::FrameBuffer(const int width, const int height, 
-							 const int nbTextures)
+							 const int nbTextures):m_width(width),
+												   m_height(height),
+												   m_nbTextures(nbTextures)
 	{
 		glGenFramebuffers(1, &m_fbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 		
-		unsigned int attachments[nbTextures];	
 
 		for(int i = 0; i < nbTextures; i++)
 		{
-			attachments[i] = GL_COLOR_ATTACHMENT0+i;
+			m_attachments[i] = GL_COLOR_ATTACHMENT0+i;
 			Texture texture = m_textureLoader.newTexture(width, height);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, attachments[i], 
+			glFramebufferTexture2D(GL_FRAMEBUFFER, m_attachments[i], 
 								   GL_TEXTURE_2D, texture.getHandle(), 0);
 			m_textures.push_back(texture);
 		}
 
-		glDrawBuffers(nbTextures, attachments);
+		glDrawBuffers(nbTextures, m_attachments);
 
 		glGenRenderbuffers(1, &m_rbo);
 		glBindRenderbuffer(GL_RENDERBUFFER, m_rbo);
@@ -154,6 +139,7 @@ namespace Elysium
 	void FrameBuffer::read()
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//		glDrawBuffer(GL_COLOR_ATTACHMENT0);
 		for(int i = 0; i < m_textures.size(); i++)
 		{
 			m_textures[i].bind(i);
@@ -163,6 +149,18 @@ namespace Elysium
 	void FrameBuffer::write()
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+		glDrawBuffers(m_nbTextures, m_attachments);
+	}
+
+	void FrameBuffer::applyDepthBuffer()
+	{
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height,
+			   			  GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT,
+						  GL_NEAREST);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);	
 	}
 
 }

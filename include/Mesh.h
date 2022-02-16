@@ -30,7 +30,7 @@ namespace Elysium
 			void draw();
 			
 			void setRenderingType(const MeshType& meshType);
-		
+
 		private:
 			unsigned int m_mesh;
 			GLenum m_renderType;

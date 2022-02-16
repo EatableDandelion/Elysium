@@ -1,41 +1,23 @@
-#include <iostream>
-#include <Circe/Circe.h>
-#include "Display.h"
-#include "Shader.h"
-#include "Mesh.h"
-#include "Texture.h"
-#include "Model.h"
-#include "Camera.h"
-#include "Assets.h"
-#include "RenderingEngine.h"
+#include "Game.h"
+#include "TestGame.h"
 
 int main()
 {
-	using namespace Elysium;
+	std::shared_ptr<TestGame> game = std::make_shared<TestGame>();
 
-	RenderingEngine elysium("Elysium", 800, 600, 3);
+	Elysium::GameLoop loop("Elysium", 800, 600, game);
 
-	elysium.getCamera().getTransform().translate(Circe::Vec3(0,0,-3));
+	loop.start();
 
-	ResourceManager<Shader, ShaderLoader> shaders("../res/shaders/");
-	ResourceManager<Mesh, MeshLoader> meshes("../res/meshes/");
-	ResourceManager<Texture, TextureLoader> textures("../res/textures/");
-	ResourceManager<Model, ModelLoader> models("../res/models/");
 
-	PassID geoID = 
-	   elysium.addPass<GeometryPass>(shaders.getResource("geometry"));
-
-	PassID finalID =
-	   elysium.addPass<FinalPass>(shaders.getResource("screen"));
-
-	Model cyborg = models.getResource("cyborg/cyborg.obj");
-	cyborg.getTransform()->translate(Circe::Vec3(0,-2,0));
-
-	elysium(geoID)->addModel(cyborg);
-
+/*	float counter = 0.0f;
 	while(!elysium.isClosed())
 	{
-		cyborg.getTransform()->rotate(Circe::Vec3(0,1,0),0.01f);
-		elysium.draw();		
-	}
+//		cyborg.getTransform()->rotate(Circe::Vec3(0,1,0),0.003f);
+	//	light->m_direction = Circe::normalize(Circe::Vec3(std::cos(counter),0.0,std::sin(counter)));
+		elysium.draw();	
+
+		counter += 0.03f;	
+	}*/
 }
+

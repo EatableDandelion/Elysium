@@ -4,11 +4,11 @@ out vec4 color;
 
 in vec2 texCoord;
 
-uniform sampler2D gPosition;
-uniform sampler2D gNormal;
 uniform sampler2D gDiffuse;
+
+uniform float ambient;
 
 void main()
 {
-	color = texture2D(gDiffuse, texCoord);
+	color = ambient*texture2D(gDiffuse, texCoord);
 }

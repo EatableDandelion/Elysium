@@ -45,17 +45,30 @@ namespace Elysium
 	void Display::update()
 	{
 		SDL_GL_SwapWindow(m_window);
-
+/*
 		SDL_Event e;
 
 		while(SDL_PollEvent(&e))
 		{
-			if(e.type == SDL_QUIT)
+			switch(e.type)
 			{
-				m_isClosed = true;
+				case SDL_QUIT:
+					m_isClosed = true;
+					break;
+
+				case SDL_MOUSEMOTION:
+					break;
+
+				case SDL_MOUSEBUTTONDOWN:
+					std::cout << e.button.button << std::endl;
+					break;
+
+				case SDL_KEYDOWN:
+					std::cout << e.key.keysym.sym << std::endl;
+					break;
 			}
 		}
-	}
+*/	}
 
 	bool Display::isClosed() const
 	{

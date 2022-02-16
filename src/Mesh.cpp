@@ -42,6 +42,11 @@ namespace Elysium
 			{
 				TempVertex vertex;
 				fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z);
+				vertex.u = 0;
+				vertex.v = 0;
+				vertex.nx = 0;
+				vertex.ny = 0;
+				vertex.nz = 0;
 				vertices.push_back(vertex);
 			}
 			else if(strcmp(lineStart, "vt")==0) //Texture coords

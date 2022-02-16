@@ -201,14 +201,14 @@ namespace Circe
 	
 	//Get the norm of the vector
 	template<std::size_t N, typename Real>
-	Real length(const Vec<N, Real>& a)
+	Real length(const Vec<N, Real> a)
 	{
 		return sqrt(dot(a, a));
 	}
 	
 	//Normalize the vector
 	template<std::size_t N, typename Real>
-	Vec<N, Real> normalize(Vec<N, Real>& v)
+	Vec<N, Real> normalize(Vec<N, Real> v)
 	{
 		v=v/Circe::length(v);
 		return v;
@@ -1383,9 +1383,18 @@ namespace Circe
 			}
 			
 			template<typename Real>
-			Vec<3, Real> rotateInv(const Vec<3, Real>& p)
+			Vec<3, Real> rotateInv(const Vec<3, Real>& v2)
 			{
-				return getConjugate().rotate(p);
+				Quaternion v((Real)0.0, v2(0), v2(1), v2(2));
+				Quaternion p(*this);
+				p.normalize();
+				Quaternion pConj=p.getConjugate();
+				Quaternion result = pConj*v*p;
+				Vec<3, Real> v3;
+				v3(0)=result.getX();
+				v3(1)=result.getY();
+				v3(2)=result.getZ();
+				return v3;
 			}
 
 			inline float getW() const
@@ -1704,11 +1713,20 @@ namespace Circe
 				m_parent.reset();
 			}
 			
-
 			inline std::weak_ptr<Transform3> getParent()
 			{
 				return m_parent;
 			}	
+
+			inline Vec3 toGlobal(const Vec3& vec, const bool translate)
+			{
+				Vec3 res = rotation.rotateInv(vec);
+
+				if(translate)
+					res = res + position;
+
+				return res;
+			}
 
 		private:
 			/** Attitude stored in LOCAL reference frame */

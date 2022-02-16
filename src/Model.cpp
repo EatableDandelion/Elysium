@@ -2,6 +2,24 @@
 
 namespace Elysium
 {
+	void Material::bind()
+	{
+		unsigned int unit = 0;
+		for(std::pair<Texture_Map, Texture> pair : m_textures)
+		{
+			pair.second.bind(unit);
+			unit++;
+		}
+	}
+
+	void Material::addTexture(const Texture_Map& map, 
+							  const Texture& texture)
+	{
+		m_textures.insert(std::pair<Texture_Map, Texture>(map, texture));
+		index[map]++;
+	}
+
+
 	Model::Model()
 	{
 		m_transform = std::make_shared<Circe::Transform3>();
@@ -11,8 +29,16 @@ namespace Elysium
 		m_transform(transform)
 	{}
 
-	void Model::draw()
+	void Model::draw(Shader& shader, const Circe::Mat44& projection)
 	{
+
+		Circe::Mat44 mvp = projection 
+							 * m_transform->getTransformMatrix();
+
+		setUniform("MVP", mvp);
+
+		uploadUniforms(shader);
+
 		for(TexturedMesh tMesh : m_tMeshes)
 		{
 			tMesh.m_material.bind();
@@ -30,7 +56,14 @@ namespace Elysium
 	{
 		m_transform = transform;
 	}
-	
+			
+	void Model::addMesh(const Mesh& mesh)
+	{
+		TexturedMesh newMesh;
+		newMesh.m_mesh = mesh;
+		m_tMeshes.push_back(newMesh);
+	}
+
 	Model ModelLoader::load(const std::string& fileName)
 	{
 		const aiScene *scene = m_importer.ReadFile(fileName, 

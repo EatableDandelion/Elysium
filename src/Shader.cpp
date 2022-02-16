@@ -1,19 +1,138 @@
 #include "Shader.h"
 
 namespace Elysium
-{
+{	
+
+	void UniformMap::uploadUniforms(Shader& shader)
+	{
+		shader.updateUniforms(*this);
+	}
+
+	void UniformMap::setUniform(const std::string& name,
+								const std::vector<float> value)
+	{
+		std::size_t nameID = CIRCE_STRING_ID(name);
+
+		if(hasUniform(nameID))
+		{
+			unsigned int size = m_positions.at(nameID).size;
+
+			if(size != value.size()) 
+				CIRCE_ERROR("The uniform "+name+" has changed size.");
+
+			unsigned int offset = m_positions.at(nameID).offset;
+			
+			for(int i = 0; i < size; i++)
+				m_values[offset + i] = value[i];
+		}
+		else
+		{
+			BufferPosition position;
+
+			position.offset = m_values.size();
+			position.size 	= value.size();
+
+			m_positions.insert(
+				std::pair<std::size_t, BufferPosition>(nameID, position));
+
+			for(int i = 0; i < value.size(); i++)
+				m_values.push_back(value[i]);
+		}
+	}
+
+	void UniformMap::setUniform(const std::string& name, 
+								const float& value)
+	{
+		setUniform(name, std::vector<float>({value}));	
+	}
+
+	void UniformMap::setUniform(const std::string& name, 
+					const Circe::Vec2& value)
+	{
+		setUniform(name, std::vector<float>({value(0), value(1)}));	
+	}
+
+	void UniformMap::setUniform(const std::string& name, 
+					const Circe::Vec3& value)
+	{
+		setUniform(name, std::vector<float>({value(0),value(1),value(2)}));
+	}
+
+	void UniformMap::setUniform(const std::string& name, 
+					const Circe::Mat44& value)
+	{
+		std::vector<float> v(
+				{value(0,0),value(0,1),value(0,2),value(0,3),
+				 value(1,0),value(1,1),value(1,2),value(1,3),
+			     value(2,0),value(2,1),value(2,2),value(2,3),
+			     value(3,0),value(3,1),value(3,2),value(3,3)});
+
+		setUniform(name, v);	
+	}
+
+	std::vector<float> UniformMap::operator()(const std::size_t name) const
+	{
+		std::vector<float> uniform;
+
+		if(hasUniform(name))
+		{	
+			unsigned int size = m_positions.at(name).size;
+			unsigned int offset = m_positions.at(name).offset;
+		
+
+			for(int i = 0; i < size; i++)
+				uniform.push_back(m_values[offset + i]);
+		}
+
+		return uniform;
+	}
+			
+	bool UniformMap::hasUniform(const std::size_t nameID) const
+	{
+		return m_positions.count(nameID);
+	}
+
 	void Shader::bind()
 	{
 		glUseProgram(m_program);
 	}
-			
-	void Shader::updateUniforms(const Circe::Mat44& modelMatrix,
-								const Camera& camera)
+		
+	void Shader::updateUniforms(const UniformMap& uniformMap)
 	{
-		Circe::Mat44 mvp = camera.getViewProjection()
-							* modelMatrix;
+		for(auto& pair : m_uniforms)
+		{
+			std::string type = pair.second.type;
+			GLuint location = pair.second.location;
+			std::vector<float> value = uniformMap(pair.first);
 
-		updateUniform("MVP", mvp);
+			if(value.size() == 0)
+			{
+				bool debug = false;
+				if(debug)
+				{
+					std::string name = pair.second.name;
+					CIRCE_ERROR("Uniform "+type+" "+name
+								+" has not been set.");
+				}
+				continue;
+			}
+
+			if(type == "float")
+					glUniform1f(location, value[0]);
+			else if(type == "vec2")
+					glUniform2fv(location, 1, &value[0]);
+			else if(type == "vec3")
+					glUniform3fv(location, 1, &value[0]);
+			else if(type == "vec4")
+					glUniform4fv(location, 1, &value[0]);
+			else if(type == "mat4")
+					glUniformMatrix4fv(location, 1, GL_TRUE, &value[0]);
+			else if(type == "sampler2D")
+					glUniform1i(location, (int)value[0]);
+//			else
+//					CIRCE_ERROR("Uniform type: "+type
+//								+" is not supported.");
+		}
 	}
 
 	void Shader::updateUniform(const std::string& name, const float& value)
@@ -46,24 +165,41 @@ namespace Elysium
 	void Shader::updateUniform(const std::string& name, 
 							   const Circe::Mat44& value)
 	{
-		std::vector<float> v({value(0,0), value(0,1), value(0,2), value(0,3),
-							  value(1,0), value(1,1), value(1,2), value(1,3),
-							  value(2,0), value(2,1), value(2,2), value(2,3),
-							  value(3,0), value(3,1), value(3,2), value(3,3)});
+		std::vector<float> v(
+				 {value(0,0),value(0,1),value(0,2),value(0,3),
+				  value(1,0),value(1,1),value(1,2),value(1,3),
+				  value(2,0),value(2,1),value(2,2),value(2,3),
+				  value(3,0),value(3,1),value(3,2),value(3,3)});
 
 		glUniformMatrix4fv(getUniformLocation(name), 1, GL_TRUE, &v[0]);
 	}
 
+
+
 	GLuint Shader::getUniformLocation(const std::string& name)
 	{
-		if(!m_uniforms.count(name))
-		{
-			m_uniforms.insert(std::pair<std::string, GLuint>
-					(name, glGetUniformLocation(m_program, name.c_str())));
-		}
-		return m_uniforms.at(name.c_str());
-	}
+		std::size_t nameID = CIRCE_STRING_ID(name);
 
+		if(!m_uniforms.count(nameID))
+		{
+//			CIRCE_ERROR("Shader does not contain uniform: "+name);
+			return 0;
+		}
+
+		return m_uniforms.at(nameID).location;
+	}
+			
+	void Shader::addUniform(const std::string& name, 
+							const std::string& type)
+	{
+		std::size_t nameID = CIRCE_STRING_ID(name);
+		Uniform uniform;
+		uniform.location = glGetUniformLocation(m_program, name.c_str()); 
+		uniform.name = name;
+		uniform.type = type;
+
+		m_uniforms.insert(std::pair<std::size_t,Uniform>(nameID, uniform));
+	}
 
 	Shader ShaderLoader::load(const std::string& fileName)
 	{
@@ -73,18 +209,28 @@ namespace Elysium
 
 		shader.m_program = m_program;
 
-		std::vector<GLuint> m_shaderStages;	
+		std::vector<GLuint> shaderStages;	
 
-		m_shaderStages.push_back(createShader(readShaderFile(fileName+".vs"), 
-									 GL_VERTEX_SHADER));
-		m_shaderStages.push_back(createShader(readShaderFile(fileName+".fs"), 
-									 GL_FRAGMENT_SHADER));
+		std::string extensions[] = {".vs", ".fs"};
+		GLuint stageNames[] = {GL_VERTEX_SHADER, GL_FRAGMENT_SHADER};
 
+		std::vector<std::string> shaderTexts;
 
 		for(unsigned int i = 0; i < NUM_SHADERS; i++)
-			glAttachShader(m_program, m_shaderStages[i]);
+		{
+			std::string shaderText = 
+							readShaderFile(fileName+extensions[i]);
 
-		shader.m_shaderStages = m_shaderStages;
+			shaderStages.push_back(createShader(shaderText,
+												stageNames[i]));
+
+			shaderTexts.push_back(shaderText);
+		}
+		
+		for(unsigned int i = 0; i < NUM_SHADERS; i++)
+			glAttachShader(m_program, shaderStages[i]);
+
+		shader.m_shaderStages = shaderStages;
 		glBindAttribLocation(m_program, 0, "position");
 		glBindAttribLocation(m_program, 1, "normal");
 		glBindAttribLocation(m_program, 2, "texCoord");
@@ -96,6 +242,9 @@ namespace Elysium
 		glValidateProgram(m_program);
 		checkShaderError(m_program, GL_VALIDATE_STATUS, true, 
 						 "Error: program is invalid");
+
+		for(std::string shaderText : shaderTexts)
+			parseStage(shaderText, shader);
 
 		return shader;
 	}
@@ -125,7 +274,19 @@ namespace Elysium
 			while(file.good())
 			{
 				getline(file, line);
-				output.append(line + "\n");
+
+				if(line.find("#include") != std::string::npos)
+				{
+					std::string incFile = split(line, ' ')[1];
+					incFile = incFile.substr(1, incFile.length()-2);
+					std::string directory = getDirectory(fileName);
+					output.append(readShaderFile(directory+incFile)+ "\n");
+				}
+				else
+				{
+					output.append(line + "\n");
+				}
+
 			}
 		}
 		else
@@ -156,11 +317,13 @@ namespace Elysium
 
 		checkShaderError(shader, GL_COMPILE_STATUS, false, 
 						 "Error: shader compilation failed");
+		
 
 		return shader;
 	}
 
-	void ShaderLoader::checkShaderError(const GLuint shader, const GLuint flag, 
+	void ShaderLoader::checkShaderError(const GLuint shader, 
+										const GLuint flag, 
 										bool isProgram, 
 										const std::string& errorMessage)
 	{
@@ -182,35 +345,81 @@ namespace Elysium
 			std::cerr << errorMessage << ": " << error << std::endl;
 		}
 	}
-}
 
-/*
-Shader::Shader(const std::string& fileName)
-{
-	m_program = glCreateProgram();
+
+	void ShaderLoader::parseStage(const std::string& text, 
+								  Shader& shader)
+	{
+		std::istringstream file(text);
+		std::string line;
+		std::string varName;
+		std::string varType;
+		while(std::getline(file, line))
+		{
+			if(parseLine(line, "uniform", varName, varType))
+			{
+//				CIRCE_INFO("uniform: " + varType + " " + varName);
+				shader.addUniform(varName, varType);
+			}
+		}
+	}
 	
-	m_shaders[0] =  CreateShader(LoadShader(fileName+".vs"), 
-								 GL_VERTEX_SHADER);
-	m_shaders[1] =  CreateShader(LoadShader(fileName+".fs"), 
-								 GL_FRAGMENT_SHADER);
+	bool ShaderLoader::parseLine(const std::string& line, 
+								 const std::string& typeName, 
+								 std::string& varName, 
+								 std::string& varType)
+	{
+		if(line.find(typeName) == std::string::npos)
+		{
+			return false;
+		}
+		
+		std::size_t start = line.find(typeName)+typeName.length()+1;
+		std::size_t end = line.find(";");
+		std::string subline = line.substr(start, end-start);
+		
+		std::size_t mid = subline.find(" ");
+		
+		varType = subline.substr(0, mid);
+		varName = subline.substr(mid+1,subline.length()-(mid+1));
 
-	for(unsigned int i = 0; i < NUM_SHADERS; i++)
-		glAttachShader(m_program, m_shaders[i]);
+		return true;
+	}
 
-	glBindAttribLocation(m_program, 0, "position");
-	glBindAttribLocation(m_program, 1, "normal");
-	glBindAttribLocation(m_program, 2, "texCoord");
+	//Source https://github.com/BennyQBD/3DEngineCpp
+	std::vector<std::string> ShaderLoader::split(const std::string& line,
+												 const char token)
+	{
+		std::vector<std::string> res;
 
-	glLinkProgram(m_program);
-	CheckShaderError(m_program, GL_LINK_STATUS, true, 
-					 "Error: program failed to link");
+		const char* cline = line.c_str();
+		int start = 0;
+		int end = 0;
 
-	glValidateProgram(m_program);
-	CheckShaderError(m_program, GL_VALIDATE_STATUS, true, 
-					 "Error: program is invalid");
+		while(end <= line.length())
+		{
+			while(end <= line.length())
+			{
+				if(cline[end] == token)
+					break;
+				end++;
+			}
+			
+			res.push_back(line.substr(start, end-start));
+			start = end + 1;
+			end = start;
+		}
 
-	//Create uniforms
-	m_uniforms[TRANSFORM_U] = glGetUniformLocation(m_program, "transform");
+		return res;
+	}
 
+	std::string ShaderLoader::getDirectory(const std::string& fullPath)
+	{
+		std::size_t pos = fullPath.find_last_of('/');
+		
+		if(pos == std::string::npos)
+			CIRCE_ERROR("Could not find directory name from "+fullPath);
+
+		return fullPath.substr(0, pos+1);
+	}
 }
-*/
