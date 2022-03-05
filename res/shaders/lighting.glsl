@@ -6,14 +6,15 @@ uniform sampler2D gNormal;
 float getSpecular(vec3 normal, vec3 position, vec3 lightDirection)
 {
 	vec3 viewDirection = normalize(eyePosition-position);
-	vec3 reflectDirection = reflect(-lightDirection, normal);
+	vec3 halfDirection = normalize(-viewDirection-lightDirection);
+	float specFactor = dot(halfDirection, -normal);
 
-	return 0.8*pow(max(dot(viewDirection, reflectDirection),0),16);
+	return 0.2*pow(max(specFactor,0),32);
 }
 
 float getDiffuse(vec3 normal, vec3 lightDirection)
 {
-	return clamp(dot(normal, lightDirection), 0, 1);
+	return 0.8*clamp(dot(normal, lightDirection), 0, 1);
 }
 
 vec4 getLighting(vec3 position, vec3 normal, 

@@ -1,8 +1,8 @@
-Lights
-Asset register
-Input
-Normal map
-Sprite
-Instance rendering
-Text
-HUD
+v - Lights
+v - Asset register
+v - Input
+  - Load geometries: reuse and access
+x - Normal map
+x - Instance rendering
+x - Text
+x - HUD

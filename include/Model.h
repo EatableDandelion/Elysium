@@ -41,6 +41,8 @@ namespace Elysium
 
 			Model(const std::shared_ptr<Circe::Transform3> transform);
 
+			Model(const Mesh& mesh, const Texture& texture);
+
 			void draw(Shader& shader, const Circe::Mat44& projection);
 
 			std::shared_ptr<Circe::Transform3> getTransform() const;
@@ -83,4 +85,5 @@ namespace Elysium
 						  	  const std::string typeName,
 							  const std::string& directory);
 	};
+
 }

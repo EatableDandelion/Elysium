@@ -11,9 +11,9 @@ namespace Elysium
 
 	Circe::Mat44 Camera::getViewProjection() const
 	{
+		Circe::Quaternion rotation = m_transform->getRotation();
 		Circe::Mat44 rotationMat = Circe::rotationMatrix
-								(m_transform->getRotation());
-								//(m_transform->getRotation().conjugate());
+									(rotation.conjugate());
 
 		Circe::Vec3 position = m_transform->getPosition()*(-1.0f);
 

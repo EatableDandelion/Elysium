@@ -24,12 +24,18 @@ namespace Elysium
 
 			bool isTerminated() const;
 
+			Shader newShader(const std::string& name);
+			Mesh newMesh(const std::string& name);
+			Texture newTexture(const std::string& name);
+			Model newModel(const std::string& name);
+			Model newSprite(const std::string& textureName);
+
 		protected:
 			std::shared_ptr<Input> m_input;
-			ResourceManager<Shader, ShaderLoader> shaders;
-			ResourceManager<Mesh, MeshLoader> meshes;
-			ResourceManager<Texture, TextureLoader> textures;
-			ResourceManager<Model, ModelLoader> models;
+			ResourceManager<Shader, ShaderLoader> m_shaders;
+			ResourceManager<Mesh, MeshLoader> m_meshes;
+			ResourceManager<Texture, TextureLoader> m_textures;
+			ResourceManager<Model, ModelLoader> m_models;
 	};
 
 	class GameLoop

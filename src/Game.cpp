@@ -3,7 +3,6 @@
 /** Game loop from https://gameprogrammingpatterns.com/game-loop.html */
 namespace Elysium
 {
-			
 	std::shared_ptr<Input> Game::getInput()
 	{
 		return m_input;
@@ -18,7 +17,33 @@ namespace Elysium
 	{
 		return m_input->isTerminated();
 	}
+
+	Shader Game::newShader(const std::string& name)
+	{
+		return m_shaders.getResource(name); 
+	}
+
+	Mesh Game::newMesh(const std::string& name)
+	{
+		return m_meshes.getResource(name); 
+	}
 	
+	Texture Game::newTexture(const std::string& name)
+	{
+		return m_textures.getResource(name); 
+	}
+
+	Model Game::newModel(const std::string& name)
+	{
+		return m_models.getResource(name); 
+	}
+			
+	Model Game::newSprite(const std::string& name)
+	{			
+		return Model(newMesh("plane3.obj"), newTexture(name));
+	}
+
+
 	namespace Time
 	{
 		typedef std::chrono::steady_clock clock;

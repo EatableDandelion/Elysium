@@ -27,8 +27,6 @@ namespace Elysium
 
 			Camera& getCamera();
 
-	//		Input& getInput();
-
 			void enable(const RenderBit kw);
 
 			void disable(const RenderBit kw);
@@ -52,6 +50,7 @@ namespace Elysium
 			Camera m_camera;
 			FrameBuffer m_frame;
 			Circe::Vec2 m_screenSize;
+			Mesh sprite;
 	};
 
 	class RenderingPass

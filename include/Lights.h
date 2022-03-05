@@ -79,7 +79,6 @@ namespace Elysium
 				shader.updateUniform("eyePosition",  renderer.getCamera()
 													 .getTransform()
 													 ->getPosition());
-
 				shader.updateUniform("screenSize", 
 									 renderer.getScreenSize());
 

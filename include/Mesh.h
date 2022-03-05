@@ -14,13 +14,22 @@ namespace Elysium
 	class MeshLoader;
 
 	struct Vertex
-	{		
+	{
+		Vertex();
+		Vertex(const float x, const float y, const float z,
+			 const float u=0.0f, const float v=0.0f,
+			 const float nx=0.0f, const float ny=0.0f, const float nz=0.0f);	
+
 		float x, y, z; 			// Position
 		float nx, ny, nz; 		// Normal
 		float u, v;				// Texture
 	};
 
-	enum MeshType{TRIANGLE_RENDERING = GL_TRIANGLES, WIRE_RENDERING = GL_LINES};
+	enum MeshType
+	{
+		TRIANGLE_RENDERING = GL_TRIANGLES, 
+		WIRE_RENDERING = GL_LINES
+	};
 
 	class Mesh
 	{
@@ -70,8 +79,23 @@ namespace Elysium
 			
 			void unload(Mesh& mesh);
 			
-			Mesh createMesh(const MeshData& meshData);
+			Mesh createMesh(const MeshData& meshData) const;
+
+			/** Assumes that all elements are triangles! */
+			MeshData calculateNormals(const MeshData& mesh) const;
 	};
 
-	
+
+	class GeometryLoader
+	{
+		public:
+			Mesh newRectangle(const bool fill) const;
+
+			Mesh newLine(const Circe::Vec3& p1, 
+						 const Circe::Vec3& p2,
+						 const float lineThickness) const;
+
+		private:
+			MeshLoader m_meshLoader;
+	};	
 }

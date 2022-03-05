@@ -29,6 +29,15 @@ namespace Elysium
 		m_transform(transform)
 	{}
 
+	Model::Model(const Mesh& mesh, const Texture& texture):
+		m_transform(std::make_shared<Circe::Transform3>())
+	{
+		TexturedMesh tMesh;
+		tMesh.m_mesh = mesh;
+		tMesh.m_material.addTexture(Texture_Map::DIFFUSE, texture);
+		m_tMeshes.push_back(tMesh);	
+	}
+
 	void Model::draw(Shader& shader, const Circe::Mat44& projection)
 	{
 
@@ -204,7 +213,6 @@ namespace Elysium
 						load(directory+"/"+std::string(str.C_Str())));
 		}
 	}
-
 }
 
 

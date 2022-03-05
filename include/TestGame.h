@@ -23,6 +23,7 @@ class TestGame : public Elysium::Game
 		virtual void update();
 
 	private:
+		Elysium::Model sprite;
 		Elysium::Model cyborg;
 		std::shared_ptr<Elysium::Mover> mover;
 };

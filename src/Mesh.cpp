@@ -2,6 +2,15 @@
 
 namespace Elysium
 {
+	Vertex::Vertex():Vertex(0.0f, 0.0f, 0.0f)
+	{}
+
+	Vertex::Vertex(const float x, const float y, const float z,
+			   	   const float u, const float v,
+			   	   const float nx, const float ny, const float nz):					x(x), y(y), z(z), u(u), v(v), nx(nx), ny(ny), nz(nz)
+	{}	
+
+
 	Mesh::Mesh():m_renderType(TRIANGLE_RENDERING)
 	{}
 
@@ -159,7 +168,7 @@ namespace Elysium
 		glDeleteBuffers(1, &(mesh.m_indexBuffer));
 	}
 
-	Mesh MeshLoader::createMesh(const MeshData& meshData)
+	Mesh MeshLoader::createMesh(const MeshData& meshData) const
 	{
 		std::vector<Vertex> vertices = meshData.vertices;
 		std::vector<unsigned int> indices = meshData.indices;
@@ -202,5 +211,120 @@ namespace Elysium
 		return mesh;
 	}
 
+
+
+	MeshData MeshLoader::calculateNormals(const MeshData& mesh) const
+	{
+		MeshData newMesh;
+		newMesh.indices = mesh.indices;
+
+		std::vector<TempVertex> vertices;
+
+		for(int i = 0; i<mesh.vertices.size(); i++)
+		{
+			TempVertex vertex;
+
+			vertex.x = mesh.vertices.at(i).x;
+			vertex.y = mesh.vertices.at(i).y;
+			vertex.z = mesh.vertices.at(i).z;
+
+			vertex.nx = 0.0f;
+			vertex.ny = 0.0f;
+			vertex.nz = 0.0f;
+
+			vertex.u = mesh.vertices.at(i).u;
+			vertex.v = mesh.vertices.at(i).v;
+
+			vertices.push_back(vertex);
+		}
+
+		for(int i = 0; i<mesh.indices.size(); i+=3)
+		{
+			TempVertex v1 = vertices[mesh.indices.at(i)];
+			TempVertex v2 = vertices[mesh.indices.at(i+1)];
+			TempVertex v3 = vertices[mesh.indices.at(i+2)];
+
+			float l1x = v2.x - v1.x;
+			float l1y = v2.y - v1.y;
+			float l1z = v2.z - v1.z;
+
+			float l2x = v3.x - v1.x;
+			float l2y = v3.y - v1.y;
+			float l2z = v3.z - v1.z;
+
+			float nx = l1y*l2z - l1z*l2y;	
+			float ny = l1z*l2x - l1x*l2z;	
+			float nz = l1x*l2y - l1y*l2x;	
+
+			v1.nx = nx;
+			v1.ny = ny;
+			v1.nz = nz;
+			v1.normalCount++;
+
+			v2.nx = nx;
+			v2.ny = ny;
+			v2.nz = nz;
+			v2.normalCount++;
+
+			v3.nx = nx;
+			v3.ny = ny;
+			v3.nz = nz;
+			v3.normalCount++;
+		}
+
+		newMesh.vertices = mesh.vertices;
+		for(int i = 0; i<vertices.size(); i++)
+		{
+			int count = vertices.at(i).normalCount;
+			newMesh.vertices[i].nx = vertices.at(i).nx/count;
+			newMesh.vertices[i].ny = vertices.at(i).ny/count;
+			newMesh.vertices[i].nz = vertices.at(i).nz/count;
+		}
+
+		return newMesh;
+	}
+
+
+	Mesh GeometryLoader::newRectangle(const bool fill) const
+	{
+		float w = 0.5f;
+		float h = 0.5f;
+
+		MeshData data;
+
+		data.vertices.push_back(Vertex(-w,-h,0, 0,0, 0,0,1));	
+		data.vertices.push_back(Vertex( w,-h,0, 1,0, 0,0,1));	
+		data.vertices.push_back(Vertex( w, h,0, 1,1, 0,0,1));	
+		data.vertices.push_back(Vertex(-w, h,0, 0,1, 0,0,1));
+
+		data.indices.push_back(4);
+		data.indices.push_back(3);
+		data.indices.push_back(2);
+		data.indices.push_back(1);
+		Mesh mesh = m_meshLoader.createMesh(data);
+
+		if(!fill) mesh.setRenderingType(MeshType::WIRE_RENDERING);
+
+		return mesh;
+	}
+
+	Mesh GeometryLoader::newLine(const Circe::Vec3& p1, 
+								 const Circe::Vec3& p2,
+								 const float lineThickness) const
+	{
+		MeshData data;
+
+		data.vertices.push_back(Vertex(p1(0),p1(1),p1(2), 0));	
+		data.vertices.push_back(Vertex(p2(0),p2(1),p2(2), 1));	
+
+		data.indices.push_back(1);
+		data.indices.push_back(2);
+
+		Mesh mesh = m_meshLoader.createMesh(data);
+		mesh.setRenderingType(MeshType::WIRE_RENDERING);
+		glLineWidth(lineThickness);
+
+		return mesh;
+	}
 }
 

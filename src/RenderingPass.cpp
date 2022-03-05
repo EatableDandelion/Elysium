@@ -95,6 +95,9 @@ namespace Elysium
 		return m_screenSize;
 	}
 	
+	
+	
+	
 	void GeometryPass::init(Renderer& renderer, Shader& shader)
 	{}
 

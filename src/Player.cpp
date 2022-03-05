@@ -8,22 +8,35 @@ namespace Elysium
 		m_forward = std::make_shared<Listener<int>>([this](int state)
 				{
 					if(state == 1)
-						m_transform->translate(Circe::Vec3(0,0,0.1f));
+					{
+						Circe::Vec3 axis1(0.0f,0.0f,0.1f);
+						axis1 = m_transform->toGlobal(axis1, false);
+						m_transform->translate(axis1);
+					}
 				});
 		m_backward = std::make_shared<Listener<int>>([this](int state)
 				{
 					if(state == 1)
-						m_transform->translate(Circe::Vec3(0,0,-0.1f));
+					{
+						Circe::Vec3 axis1(0.0f,0.0f,-0.1f);
+						axis1 = m_transform->toGlobal(axis1, false);
+						m_transform->translate(axis1);
+					}
 				});
 		m_left = std::make_shared<Listener<int>>([this](int state)
 				{
 					if(state == 1)
-						m_transform->translate(Circe::Vec3(-0.1f,0,0));
+					{
+						Circe::Vec3 axis1(-0.1f,0.0f,0.0f);
+						axis1 = m_transform->toGlobal(axis1, false);
+						m_transform->translate(axis1);
+					}
 				});
 		m_right = std::make_shared<Listener<int>>([this](int state)
 				{
-					if(state == 1)
-						m_transform->translate(Circe::Vec3(0.1f,0,0));
+						Circe::Vec3 axis1(0.1f,0.0f,0.0f);
+						axis1 = m_transform->toGlobal(axis1, false);
+						m_transform->translate(axis1);
 				});	
 		m_rotate = 
 			std::make_shared<Listener<Circe::Vec2>>([this](Circe::Vec2 dx)
@@ -34,8 +47,8 @@ namespace Elysium
 					axis1 = m_transform->toGlobal(axis1, false);
 					axis2 = m_transform->toGlobal(axis2, false);
 
-					m_transform->rotate(axis1,-dx(0)*0.005f);
-					m_transform->rotate(axis2,-dx(1)*0.005f);
+					m_transform->rotate(axis1,dx(0)*0.005f);
+					m_transform->rotate(axis2,dx(1)*0.005f);
 				});	
 	}
 

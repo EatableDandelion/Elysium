@@ -3,7 +3,9 @@
 void TestGame::init(Elysium::RenderingEngine& elysium)
 {
 	using namespace Elysium;
-/*
+
+	
+	/*
 	Emitter<int> emitter;
 	std::shared_ptr<Listener<int>> listener = 
 					std::make_shared<Listener<int>>();
@@ -14,27 +16,31 @@ void TestGame::init(Elysium::RenderingEngine& elysium)
 	emitter.addListener(listener);
 */
 
-	shaders.setFolderLocation("../res/shaders/");
-	meshes.setFolderLocation("../res/meshes/");
-	textures.setFolderLocation("../res/textures/");
-	models.setFolderLocation("../res/models/");
+	m_shaders.setFolderLocation("../res/shaders/");
+	m_meshes.setFolderLocation("../res/meshes/");
+	m_textures.setFolderLocation("../res/textures/");
+	m_models.setFolderLocation("../res/models/");
+
+
+	elysium.addPass<GeometryPass>(newShader("geometry"));
+	
+	elysium.addPass<LightPass<DirectionalLight>>
+					(newShader("directionalLight"), 
+					 newMesh("plane3.obj"));
+
+	elysium.addPass<LightPass<PointLight>>
+					(newShader("pointLight"), 
+					 newMesh("plane3.obj"));
+
+	elysium.addPass<AmbientPass>(newShader("screen"),
+								 newMesh("plane3.obj"), 0.0f);
 
 	elysium.getCamera().getTransform()->translate(Circe::Vec3(0,0,-5));
 
-	elysium.addPass<GeometryPass>(shaders.getResource("geometry"));
-	
-	elysium.addPass<LightPass<DirectionalLight>>
-					(shaders.getResource("directionalLight"), 
-					 meshes.getResource("plane3.obj"));
+	sprite = newSprite("bricks2.png");
+	elysium.get<GeometryPass>()->addModel(sprite);
 
-	elysium.addPass<LightPass<PointLight>>
-					(shaders.getResource("pointLight"), 
-					 meshes.getResource("plane3.obj"));
-
-	elysium.addPass<AmbientPass>(shaders.getResource("screen"),
-								 meshes.getResource("plane3.obj"), 0.0f);
-
-	cyborg = models.getResource("cyborg/cyborg.obj");
+	cyborg = newModel("cyborg/cyborg.obj");
 	cyborg.getTransform()->translate(Circe::Vec3(0,-2,0));
 	elysium.get<GeometryPass>()->addModel(cyborg);
 
@@ -50,11 +56,10 @@ void TestGame::init(Elysium::RenderingEngine& elysium)
 									 Circe::Vec3(1.0,0.0,0.0),
 									 Circe::Vec3(1,0,1));
 
-	elysium.get<LightPass<PointLight>>()->addLight(plight);
+//	elysium.get<LightPass<PointLight>>()->addLight(plight);
 
 
-	//mover = std::make_shared<Mover>(elysium.getCamera().getTransform());
-	mover = std::make_shared<Mover>(cyborg.getTransform());
+	mover = std::make_shared<Mover>(elysium.getCamera().getTransform());
 
 	m_input = std::make_shared<Input>();
 

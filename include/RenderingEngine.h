@@ -92,18 +92,10 @@ namespace Elysium
 	
 			Camera& getCamera();
 
-//			Input& getInput();
-
 			void swapBuffers();
 	
 			bool isClosed() const;
 
-//			void pollInput();
-
-//			Emitter<int>& getKey(const int key);
-
-//			Emitter<Circe::Vec2>& getMouseMotion();
-	
 		private:
 			bool m_terminate = false;
 			bool m_wasInit = false;

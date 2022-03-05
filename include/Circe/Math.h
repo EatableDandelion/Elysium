@@ -1575,9 +1575,7 @@ namespace Circe
 		return m;
 	}
 
-
-
-	struct Transform3
+	class Transform3
 	{
 		public:
 			inline Transform3(const Vec3& position0 = Vec3(0.0f,0.0f,0.0f),
@@ -1636,17 +1634,6 @@ namespace Circe
 				return rotation;
 			}		
 
-			/*inline void setRotation(const Vec2& fwdAxis)
-			{
-				rotation(rotationMatrix(fwdAxis));
-			}
-			
-			inline void setRotation(const Vec3& leftAxis, 
-									const Vec3& fwdAxis)
-			{
-				rotation(rotationMatrix(leftAxis, fwdAxis));
-			}*/
-
 			inline Vec3& getScale()
 			{
 				return scale;
@@ -1692,7 +1679,8 @@ namespace Circe
 						   * (rotationMatrix(rotation)) 
 						   * (scaleMatrix(scale));
 
-				if(std::shared_ptr<Transform3> parent = m_parent.lock())
+				return res;
+/*				if(std::shared_ptr<Transform3> parent = m_parent.lock())
 				{
 					return parent->getTransformMatrix()*res;
 				}
@@ -1700,8 +1688,8 @@ namespace Circe
 				{
 					return res;
 				}
-			}
-			
+*/			}
+/*			
 			inline void attachTo(const std::shared_ptr<Transform3>& parent)
 			{
 				m_parent = parent;
@@ -1717,7 +1705,7 @@ namespace Circe
 			{
 				return m_parent;
 			}	
-
+*/
 			inline Vec3 toGlobal(const Vec3& vec, const bool translate)
 			{
 				Vec3 res = rotation.rotateInv(vec);
@@ -1733,7 +1721,7 @@ namespace Circe
 			Vec3 position;
 			Quaternion rotation;
 			Vec3 scale;
-			std::weak_ptr<Transform3> m_parent;
+			//std::weak_ptr<Transform3> m_parent;
 	};
 	
 
