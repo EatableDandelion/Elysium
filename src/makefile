@@ -5,6 +5,7 @@ CC=g++
 CFLAGS= -std=c++17 -g -I$(IDIR)
 
 ODIR=obj
+SUBDIR = Game Rendering Physics
 
 #Look in current directory for internal libraries
 LIBFLAG=$(wildcard *.dll)
@@ -13,12 +14,11 @@ LIBFLAG=$(wildcard *.dll)
 LIBFLAG += -L../lib
 LIBFLAG += -lm -lGLEW -lGLU -lGL -lSDL2 -lassimp
 
-_DEPS =$(wildcard *.h)
-DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))\
-       $(wildcard ../Testing/*.h)
+DEPS = $(wildcard *.h $(IDIR)/*.h)\
+       $(wildcard *.h $(foreach fd, $(SUBDIR), $(IDIR)/$(fd)/*.h))
 
-SRC=$(wildcard *.cpp)\
-    $(wildcard ../Testing/*.cpp)
+SRC=$(wildcard *.cpp $(foreach fd, $(SUBDIR), $(fd)/*.cpp))
+
 _OBJ = $(SRC:.cpp=.o)
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
@@ -106,7 +106,23 @@ git:
 
 #delete all the Object files and the executable.
 clean:
+	clear
+	for fd in $(SUBDIR); do \
+		rm $(ODIR)/$$fd/*.o; \
+	done
 	rm $(ODIR)/*.o *.exe
+
+#Print all the files that will be compiled
+echoes:
+	@echo "Include files: $(DEPS)"
+	@echo "Source files: $(SRC)"
+
+#Create a new subdirectory. Remember to add it to "subdir" variable!
+#make DIR=Rendering directory
+directory:
+	mkdir $(IDIR)/$(DIR)
+	mkdir $(DIR)
+	mkdir $(ODIR)/$(DIR)
 
 #http://www.cs.colby.edu/maxwell/courses/tutorials/maketutor/
 #http://nuclear.mutantstargoat.com/articles/make/

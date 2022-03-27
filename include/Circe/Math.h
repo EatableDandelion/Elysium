@@ -5,34 +5,33 @@
 #include <math.h>
 #include <memory>
 #include <vector>
+#include "Profile.h"
 
 namespace Circe
 {	
+	typedef double Real;
+
 	//Fwd declaration
 	struct Complex;
 	struct Quaternion;
-	template<std::size_t N, typename Real> struct Vec;
-	template<typename Real> struct Vec<2,Real>;
-	template<typename Real> struct Vec<3,Real>;
-	template<typename Real> struct Vec<4,Real>;
-	template<std::size_t N, std::size_t M, typename Real> struct Mat;
-	struct Transform3;
+	struct Mat;
+	template<std::size_t N> struct Vec;
 	
 	//A few useful functions
-	template<typename Real>
-	extern Real min(const Real& a, const Real& b)
+	template<typename Number>
+	extern Number min(const Number& a, const Number& b)
 	{
 		return std::min(a,b);
 	}
 	
-	template<typename Real>
-	extern Real max(const Real& a, const Real& b)
+	template<typename Number>
+	extern Number max(const Number& a, const Number& b)
 	{
 		return std::max(a,b);
 	}
 	
-	template<std::size_t M, typename Real>
-	Real max(const Vec<M,Real>& a)
+	template<std::size_t M>
+	Real max(const Vec<M>& a)
 	{
 		Real maximum = a(0);
 		for(int i = 1; i<M; i++)
@@ -42,8 +41,8 @@ namespace Circe
 		return maximum;
 	}
 	
-	template<std::size_t M, typename Real>
-	Real min(const Vec<M,Real>& a)
+	template<std::size_t M>
+	Real min(const Vec<M>& a)
 	{
 		Real minimum = a(0);
 		for(int i = 1; i<M; i++)
@@ -53,49 +52,26 @@ namespace Circe
 		return minimum;
 	}
 	
-	/*template<typename Real>
-	extern Real operator ""_deg(const Real& angle)
-	{
-		return angle*3.141596/180.0;
-	}
-	
-	template<typename Real>
-	extern Real operator ""_rad(long double angle)
-	{
-		return angle;
-	}*/
-	
-	template<typename Real>
-	Real cross(const Vec<2, Real>& a, const Vec<2, Real>& b)
-	{
-		return a(0)*b(1)-a(1)*b(0);
-	}
-	
-	template<typename Real>
-	Vec<3, Real> cross(const Vec<3, Real>& a, const Vec<3, Real>& b)
-	{
-		return Vec<3, Real>(a(1)*b(2)-a(2)*b(1),-a(0)*b(2)+a(2)*b(0),a(0)*b(1)-a(1)*b(0));
-	}
 	
 	//Scalar product
-	template<std::size_t N, typename Real>
-	Real dot(const Vec<N, Real>& a, const Vec<N, Real>& b)
+	template<std::size_t N>
+	Real dot(const Vec<N>& a, const Vec<N>& b)
 	{
 		return a.dot(b);
 	}
 	
 	//Inequality operator
-	template<std::size_t N, typename Real>
-	bool operator!=(const Vec<N, Real>& a, const Vec<N, Real>& b)
+	template<std::size_t N>
+	bool operator!=(const Vec<N>& a, const Vec<N>& b)
 	{
 		return !(a==b);
 	}
 	
 	//Add two vectors
-	template<std::size_t N, typename Real>
-	Vec<N, Real> operator+(const Vec<N, Real>& a, const Vec<N, Real>& b)
+	template<std::size_t N>
+	Vec<N> operator+(const Vec<N>& a, const Vec<N>& b)
 	{
-		Vec<N, Real> res;
+		Vec<N> res;
 		for(int i=0; i<N;++i)
 		{
 			res(i)=a(i)+b(i);
@@ -104,10 +80,10 @@ namespace Circe
 	}
 				
 	//Subtract two vectors
-	template<std::size_t N, typename Real>
-	Vec<N, Real> operator-(const Vec<N, Real>& a, const Vec<N, Real>& b)
+	template<std::size_t N>
+	Vec<N> operator-(const Vec<N>& a, const Vec<N>& b)
 	{
-		Vec<N, Real> res;
+		Vec<N> res;
 		for(int i=0; i<N;++i)
 		{
 			res(i)=a(i)-b(i);
@@ -116,10 +92,10 @@ namespace Circe
 	}
 	
 	//Negative vector
-	template<std::size_t N, typename Real>
-	Vec<N, Real> operator-(const Vec<N, Real>& a)
+	template<std::size_t N>
+	Vec<N> operator-(const Vec<N>& a)
 	{
-		Vec<N, Real> res;
+		Vec<N> res;
 		for(int i=0; i<N;++i)
 		{
 			res(i)=-a(i);
@@ -128,10 +104,10 @@ namespace Circe
 	}
 	
 	//Multiply vector term by term
-	template<std::size_t N, typename Real>
-	Vec<N, Real> operator*(const Vec<N, Real>& a, const Vec<N, Real>& b)
+	template<std::size_t N>
+	Vec<N> operator*(const Vec<N>& a, const Vec<N>& b)
 	{
-		Vec<N, Real> res;
+		Vec<N> res;
 		for(int i=0; i<N;++i)
 		{
 			res(i)=a(i)*b(i);
@@ -140,10 +116,10 @@ namespace Circe
 	}
 	
 	//Divide vector term by term
-	template<std::size_t N, typename Real>
-	Vec<N, Real> operator/(const Vec<N, Real>& a, const Vec<N, Real>& b)
+	template<std::size_t N>
+	Vec<N> operator/(const Vec<N>& a, const Vec<N>& b)
 	{
-		Vec<N, Real> res;
+		Vec<N> res;
 		for(int i=0; i<N;++i)
 		{
 			res(i)=a(i)/b(i);
@@ -152,10 +128,10 @@ namespace Circe
 	}
 	
 	//Add float to a vector
-	template<std::size_t N, typename Real>
-	Vec<N, Real> operator+(const Vec<N, Real>& a, const Real& b)
+	template<std::size_t N>
+	Vec<N> operator+(const Vec<N>& a, const Real& b)
 	{
-		Vec<N, Real> res;
+		Vec<N> res;
 		for(int i=0; i<N;++i)
 		{
 			res(i)=a(i)+b;
@@ -163,17 +139,17 @@ namespace Circe
 		return res;
 	}
 	
-	template<std::size_t N, typename Real>
-	Vec<N, Real> operator+(const Real& b, const Vec<N, Real>& a)
+	template<std::size_t N>
+	Vec<N> operator+(const Real& b, const Vec<N>& a)
 	{
 		return a+b;
 	}
 	
 	//Multiply float to this vector
-	template<std::size_t N, typename Real>
-	Vec<N, Real> operator*(const Vec<N, Real>& a, const Real& b)
+	template<std::size_t N>
+	Vec<N> operator*(const Vec<N>& a, const Real& b)
 	{
-		Vec<N, Real> res;
+		Vec<N> res;
 		for(int i=0; i<N;++i)
 		{
 			res(i)=a(i)*b;
@@ -181,17 +157,17 @@ namespace Circe
 		return res;
 	}
 	
-	template<std::size_t N, typename Real>
-	Vec<N, Real> operator*(const Real& b, const Vec<N, Real>& a)
+	template<std::size_t N>
+	Vec<N> operator*(const Real& b, const Vec<N>& a)
 	{
 		return a*b;
 	}
 	
 	//Divide float to this vector
-	template<std::size_t N, typename Real>
-	Vec<N, Real> operator/(const Vec<N, Real>& a, const Real& b)
+	template<std::size_t N>
+	Vec<N> operator/(const Vec<N>& a, const Real& b)
 	{
-		Vec<N, Real> res;
+		Vec<N> res;
 		for(int i=0; i<N;++i)
 		{
 			res(i)=a(i)/b;
@@ -200,39 +176,39 @@ namespace Circe
 	}
 	
 	//Get the norm of the vector
-	template<std::size_t N, typename Real>
-	Real length(const Vec<N, Real> a)
+	template<std::size_t N>
+	Real norm(const Vec<N> a)
 	{
 		return sqrt(dot(a, a));
 	}
 	
 	//Normalize the vector
-	template<std::size_t N, typename Real>
-	Vec<N, Real> normalize(Vec<N, Real> v)
+	template<std::size_t N>
+	Vec<N> normalize(Vec<N> v)
 	{
-		v=v/Circe::length(v);
+		v=v/norm(v);
 		return v;
 	}
 	
 	//Get distance square
-	template<std::size_t N, typename Real>
-	Real distanceSquare(const Vec<N, Real>& a, const Vec<N, Real>& b)
+	template<std::size_t N>
+	Real distanceSquare(const Vec<N>& a, const Vec<N>& b)
 	{
 		return (a-b).dot(a-b);
 	}
 	
 	//Get distance
-	template<std::size_t N, typename Real>
-	Real distance(const Vec<N, Real>& a, const Vec<N, Real>& b)
+	template<std::size_t N>
+	Real distance(const Vec<N>& a, const Vec<N>& b)
 	{
 		return sqrt(distanceSquare(a, b));
 	}
 	
 	//Matrix multiplication, returns v*A
-	template<std::size_t N, std::size_t M, typename Real>
-	Vec<M, Real> operator*(const Vec<N, Real>& a, const Mat<N, M, Real>& m)
+	/*template<std::size_t N, std::size_t M>
+	Vec<M> operator*(const Vec<N>& a, const Mat<N, M>& m)
 	{
-		Vec<M, Real> result;
+		Vec<M> result;
 		for(int j = 0; j<M; ++j)
 		{
 			Real value = (Real)0.0;
@@ -243,18 +219,11 @@ namespace Circe
 			result(j)=value;
 		}
 		return result;
-	}
+	}*/
 
-	
-	
+		
 
-
-
-
-
-
-
-	template<std::size_t N, typename Real = float>
+	template<std::size_t N>
 	struct Vec
 	{
 		public:
@@ -277,7 +246,7 @@ namespace Circe
 			}
 			
 			//Copy constructor
-			Vec(const Vec<N, Real>& v)
+			Vec(const Vec<N>& v)
 			{
 				for(int i=0;i<N;++i)
 				{
@@ -294,7 +263,7 @@ namespace Circe
 			}
 			
 			//Copy assignment
-			Vec<N>& operator=(const Vec<N, Real>& b)
+			Vec<N>& operator=(const Vec<N>& b)
 			{
 				for(int i=0;i<N;++i)
 				{
@@ -304,7 +273,7 @@ namespace Circe
 			}
 			
 			//Add a vector to this one
-			void operator+=(const Vec<N, Real>& b)
+			void operator+=(const Vec<N>& b)
 			{
 				for(int i=0; i<N;++i)
 				{
@@ -313,7 +282,7 @@ namespace Circe
 			}
 			
 			//Subtract a vector to this one
-			void operator-=(const Vec<N, Real>& b)
+			void operator-=(const Vec<N>& b)
 			{
 				for(int i=0; i<N;++i)
 				{
@@ -322,7 +291,7 @@ namespace Circe
 			}
 
 			//Multiply vector term by term
-			void operator*=(const Vec<N, Real>& b)
+			void operator*=(const Vec<N>& b)
 			{
 				for(int i=0; i<N;++i)
 				{
@@ -331,7 +300,7 @@ namespace Circe
 			}
 			
 			//Divide vector term by term
-			void operator/=(const Vec<N, Real>& b)
+			void operator/=(const Vec<N>& b)
 			{
 				for(int i=0; i<N;++i)
 				{
@@ -376,7 +345,7 @@ namespace Circe
 			}
 			
 			//Equality operator
-			bool operator==(const Vec<N, Real>& b) const
+			bool operator==(const Vec<N>& b) const
 			{
 				for(int i=0;i<N;++i)
 				{
@@ -389,7 +358,7 @@ namespace Circe
 			}
 	
 			//Dot product
-			Real dot(const Vec<N, Real>& b) const
+			Real dot(const Vec<N>& b) const
 			{
 				Real result(0.0);
 				for(int i=0; i<N;++i)
@@ -421,12 +390,18 @@ namespace Circe
 				}
 			}
 			
+			std::size_t getSize() const
+			{
+				return N;
+			}
+			
 		private:
 			Real data[N];
 	};
-	
-	template<typename Real = float>
-	struct Vec<2, Real>
+
+
+	template<>	
+	struct Vec<2>
 	{
 		public:
 			Vec():x((Real)0.0), y((Real)0.0)
@@ -436,7 +411,7 @@ namespace Circe
 			{}
 			
 			//Copy constructor
-			Vec(const Vec<2, Real>& v):x(v.x), y(v.y)
+			Vec(const Vec<2>& v):x(v.x), y(v.y)
 			{}
 			
 			Vec(const Real& f)
@@ -446,7 +421,7 @@ namespace Circe
 			}
 			
 			//Copy assignment
-			Vec<2, Real>& operator=(const Vec<2, Real>& b)
+			Vec<2>& operator=(const Vec<2>& b)
 			{
 				x=b.x;
 				y=b.y;
@@ -454,28 +429,28 @@ namespace Circe
 			}
 			
 			//Add a vector to this one
-			void operator+=(const Vec<2, Real>& b)
+			void operator+=(const Vec<2>& b)
 			{
 				x+=b.x;
 				y+=b.y;
 			}
 			
 			//Subtract a vector to this one
-			void operator-=(const Vec<2, Real>& b)
+			void operator-=(const Vec<2>& b)
 			{
 				x-=b.x;
 				y-=b.y;
 			}
 
 			//Multiply vector term by term
-			void operator*=(const Vec<2, Real>& b)
+			void operator*=(const Vec<2>& b)
 			{
 				x*=b.x;
 				y*=b.y;
 			}
 			
 			//Divide vector term by term
-			void operator/=(const Vec<2, Real>& b)
+			void operator/=(const Vec<2>& b)
 			{
 				x/=b.x;
 				y/=b.y;
@@ -510,19 +485,19 @@ namespace Circe
 			}
 			
 			//Equality operator
-			bool operator==(const Vec<2, Real>& b) const
+			bool operator==(const Vec<2>& b) const
 			{
 				return (x==b.x && y==b.y);
 			}
 	
 			//Dot product
-			Real dot(const Vec<2, Real>& b) const
+			Real dot(const Vec<2>& b) const
 			{
 				return x*b.x + y*b.y;
 			}
 	
 			//Get one element of this vector
-			Real operator()(const unsigned int& index) const
+			inline Real operator()(const unsigned int& index) const
 			{
 				assert(index<2);
 				if(index==0)return x;
@@ -531,7 +506,7 @@ namespace Circe
 			}
 	
 			//Set one element of this vector
-			Real &operator()(const unsigned int& index)
+			inline Real& operator()(const unsigned int& index)
 			{
 				assert(index<2);
 				if(index==0)return x;
@@ -545,32 +520,17 @@ namespace Circe
 				y=(Real)0.0;
 			}
 			
-			/*Vec<2, Real> rotate(const Complex& q)
+			std::size_t getSize() const
 			{
-				float c=q.getReal();
-				float s=q.getImaginary();
-				float xtemp=c*x-s*y;
-				y=s*x+c*y;
-				x=xtemp;
-				return *this;
+				return 2;
 			}
-			
-			Vec<2, Real> rotateInv(const Complex& q)
-			{
-				float c=q.getReal();
-				float s=q.getImaginary();
-				float xtemp=c*x+s*y;
-				y=-s*x+c*y;
-				x=xtemp;
-				return *this;
-			}*/
 			
 		private:
 			Real x, y;
 	};
-	
-	template<typename Real = float>
-	struct Vec<3, Real>
+
+	template<>	
+	struct Vec<3>
 	{
 		public:
 			Vec():x((Real)0.0), y((Real)0.0f), z((Real)0.0f)
@@ -581,7 +541,7 @@ namespace Circe
 			{}
 			
 			//Copy constructor
-			Vec(const Vec<3, Real>& v):x(v.x), y(v.y), z(v.z)
+			Vec(const Vec<3>& v):x(v.x), y(v.y), z(v.z)
 			{}
 			
 			Vec(const Real& f)
@@ -592,7 +552,7 @@ namespace Circe
 			}
 			
 			//Copy assignment
-			Vec<3, Real>& operator=(const Vec<3, Real>& b)
+			Vec<3>& operator=(const Vec<3>& b)
 			{
 				x=b.x;
 				y=b.y;
@@ -601,7 +561,7 @@ namespace Circe
 			}
 			
 			//Add a vector to this one
-			void operator+=(const Vec<3, Real>& b)
+			void operator+=(const Vec<3>& b)
 			{
 				x+=b.x;
 				y+=b.y;
@@ -609,7 +569,7 @@ namespace Circe
 			}
 			
 			//Subtract a vector to this one
-			void operator-=(const Vec<3, Real>& b)
+			void operator-=(const Vec<3>& b)
 			{
 				x-=b.x;
 				y-=b.y;
@@ -617,7 +577,7 @@ namespace Circe
 			}
 
 			//Multiply vector term by term
-			void operator*=(const Vec<3, Real>& b)
+			void operator*=(const Vec<3>& b)
 			{
 				x*=b.x;
 				y*=b.y;
@@ -625,7 +585,7 @@ namespace Circe
 			}
 			
 			//Divide vector term by term
-			void operator/=(const Vec<3, Real>& b)
+			void operator/=(const Vec<3>& b)
 			{
 				x/=b.x;
 				y/=b.y;
@@ -665,19 +625,19 @@ namespace Circe
 			}
 			
 			//Equality operator
-			bool operator==(const Vec<3, Real>& b) const
+			bool operator==(const Vec<3>& b) const
 			{
 				return (x==b.x && y==b.y && z==b.z);
 			}
 	
 			//Dot product
-			Real dot(const Vec<3, Real>& b) const
+			Real dot(const Vec<3>& b) const
 			{
 				return x*b.x + y*b.y + z*b.z;
 			}
 			
 			//Get one element of this vector
-			Real operator()(const unsigned int& index) const
+			inline Real operator()(const unsigned int& index) const
 			{
 				assert(index<3);
 				if(index==0)return x;
@@ -687,7 +647,7 @@ namespace Circe
 			}
 	
 			//Set one element of this vector
-			Real& operator()(const unsigned int& index)
+			inline Real& operator()(const unsigned int& index)
 			{
 				assert(index<3);
 				if(index==0)return x;
@@ -703,269 +663,116 @@ namespace Circe
 				z=(Real)0.0;
 			}
 			
-
+			std::size_t getSize() const
+			{
+				return 3;
+			}
+	
 			
 		private:
 			Real x, y, z, padding;
 	};
 	
-	template<typename Real = float>
-	struct Vec<4, Real>
-	{
-		public:
-			Vec():x((Real)0.0), y((Real)0.0), z((Real)0.0), w((Real)0.0)
-			{}
-		
-			Vec(const Real& x, const Real& y, const Real& z, 
-					const Real& w):x(x), y(y), z(z), w(w)
-			{}
-			
-			//Copy constructor
-			Vec(const Vec<4, Real>& v):x(v.x), y(v.y), z(v.z), w(v.w)
-			{}
-			
-			Vec(const Real& f)
-			{
-				x=f;
-				y=f;
-				z=f;
-				w=f;
-			}
-			
-			//Copy assignment
-			Vec<4, Real>& operator=(const Vec<4, Real>& b)
-			{
-				x=b.x;
-				y=b.y;
-				z=b.z;
-				w=b.w;
-				return *this;
-			}
-			
-			//Add a vector to this one
-			void operator+=(const Vec<4, Real>& b)
-			{
-				x+=b.x;
-				y+=b.y;
-				z+=b.z;
-				w+=b.w;
-			}
-			
-			//Subtract a vector to this one
-			void operator-=(const Vec<4, Real>& b)
-			{
-				x-=b.x;
-				y-=b.y;
-				z-=b.z;
-				w-=b.w;
-			}
+	using Vec2=Vec<2>;
+	using Vec3=Vec<3>;
 
-			//Multiply vector term by term
-			void operator*=(const Vec<4, Real>& b)
-			{
-				x*=b.x;
-				y*=b.y;
-				z*=b.z;
-				w*=b.w;
-			}
-			
-			//Divide vector term by term
-			void operator/=(const Vec<4, Real>& b)
-			{
-				x/=b.x;
-				y/=b.y;
-				z/=b.z;
-				z/=b.w;
-			}
-
-			//Add float to this vector
-			void operator+=(const Real& b)
-			{
-				x+=b;
-				y+=b;
-				z+=b;
-				w+=b;
-			}
-			
-			//Subtract float to this vector
-			void operator-=(const Real& b)
-			{
-				x-=b;
-				y-=b;
-				z-=b;
-				w-=b;
-			}
-
-			//Multiply float to this vector
-			void operator*=(const Real& b)
-			{
-				x*=b;
-				y*=b;
-				z*=b;
-				w*=b;
-			}
-			
-			//Divide float to this vector
-			void operator/=(const Real& b)
-			{
-				x/=b;
-				y/=b;
-				z/=b;
-				z/=b;
-			}
-			
-			//Equality operator
-			bool operator==(const Vec<4, Real>& b) const
-			{
-				return (x==b.x && y==b.y && z==b.z && w==b.w);
-			}
-	
-			//Dot product
-			Real dot(const Vec<4, Real>& b) const
-			{
-				return x*b.x + y*b.y + z*b.z + w*b.w;
-			}
-	
-			//Get one element of this vector
-			Real operator()(const unsigned int& index) const
-			{
-				assert(index<4);
-				if(index==0)return x;
-				if(index==1)return y;
-				if(index==2)return z;
-				if(index==3)return w;
-				return (Real)0.0f;
-			}
-	
-			//Set one element of this vector
-			Real &operator()(const unsigned int& index)
-			{
-				assert(index<4);
-				if(index==0)return x;
-				if(index==1)return y;
-				if(index==2)return z;
-				if(index==3)return w;
-				return x;
-			}
-			
-			void reset()
-			{
-				x=(Real)0.0f;
-				y=(Real)0.0f;
-				z=(Real)0.0f;
-				w=(Real)0.0f;
-			}
-			
-		private:
-			Real x, y, z, w;
-	};
-	
-	using Vec2=Vec<2, float>;
-	using Vec3=Vec<3, float>;
-	using Vec4=Vec<4, float>;
-	
-
-	template<std::size_t N, std::size_t M=N, typename Real = float>
 	struct Mat
 	{	
 		public:
-			Mat()
+			Mat(const std::size_t newM, const std::size_t newN)
 			{	
-				for(int i = 0; i<N; ++i)
-				{
-					for(int j = 0; j<M; ++j)
-					{
-						//data.push_back((Real)0.0);
-						data[i*M+j] = (Real)0.0;
-					}
-				}	
+				init(newM, newN);	
 			}
-			
-			Mat(const std::initializer_list<Real>& values)
+		
+			void init(const std::size_t newM, const std::size_t newN)
 			{
-				/*
-				for(int i = 0; i<N; ++i)
-				{
-					for(int j = 0; j<M; ++j)
-					{
-						data.push_back((Real)0.0);
-					}
-				}	*/
-				
-				size_t i = 0;
-				size_t j = 0;
+				M = newM;
+				N = newN;
+				data.clear();
+				for(int k = 0; k<M*N; k++)
+					data.push_back(0.0);
+			}
+
+			Mat(const std::size_t M, const std::size_t N,
+				const std::initializer_list<Real>& values)
+			{
+				init(M,N);
+				std::size_t k = 0;
 				for(Real f : values)
 				{
-					if(j==M)
+					data[k] = f;
+					k++;
+				}
+
+			}
+
+			Mat(const std::initializer_list<Mat>& values)
+			{
+				for(Mat m : values)
+				{
+					M  = max(M,m.M);
+					N += m.N;
+				}
+
+				init(M,N);
+
+				int j0 = 0;
+				for(Mat m : values)
+				{
+					for(int j = 0; j<m.N; j++)
 					{
-						i++;
-						j=0;
+						for(int i = 0; i<m.M; i++)
+						{
+							(*this)(i,j0) = m(i,j);
+						}
+						j0++;
 					}
-					data[i*M+j] =f;
-					j++;
 				}
 			}
 			
 			
-			Mat<N,M,Real> &operator=(const Mat<N,M,Real>& m)
+			Mat& operator=(const Mat& m)
 			{
-				for(int i=0;i<N;++i)
-				{
-					for(int j = 0; j<M; ++j)
-					{
-						data[i*M+j] = m(i,j);
-					}
-				}
+				init(m.M, m.N);
+				data = m.data;	
 				return *this;
 			}
 			
-			//Turn the matrix to I
-			void setIdentity()
+		
+			//Matrix multiplication to matrix
+			Mat operator*(const Mat& m) const
 			{
-				for(int i = 0; i<min(N, M); ++i)
+				assert(N == m.M);
+
+				Mat result(M,m.N);
+				for(int i = 0; i<M; ++i)
 				{
-					data[i*M+i]=(Real)1.0;
-				}	
-			}
-			
-			//Set all the coeffs to 0
-			void reset()
-			{
-				for(int i = 0; i<N; ++i)
-				{
-					for(int j = 0; j<M; ++j)
+					for(int j = 0; j<m.N; ++j)
 					{
-						data[i*M+j]=(Real)0.0;
-					}
-				}	
-			}
-			
-			Mat<M,N,Real> getTranspose() const
-			{
-				Mat<M,N> result;
-				for(int i = 0; i<N; ++i)
-				{
-					for(int j = 0; j<M; ++j)
-					{
-						result(j,i)=get(i,j);
+						Real value = (Real)0.0;
+						for(int k=0;k<N; ++k)
+						{
+							value+=(*this)(i,k)*m(k,j);
+						}
+						result(i,j)=value;
 					}
 				}	
 				return result;
 			}
-			
-			//Matrix multiplication to matrix
-			template<std::size_t O>
-			Mat<N,O,Real> operator*(const Mat<M,O,Real>& m) const
+				
+			Mat transposeMult(const Mat& m) const
 			{
-				Mat<N,O> result;
+				assert(M == m.M);
+
+				Mat result(N,m.N);
 				for(int i = 0; i<N; ++i)
 				{
-					for(int j = 0; j<O; ++j)
+					for(int j = 0; j<m.N; ++j)
 					{
 						Real value = (Real)0.0;
 						for(int k=0;k<M; ++k)
 						{
-							value+=get(i,k)*m(k,j);
+							value+=(*this)(k,i)*m(k,j);
 						}
 						result(i,j)=value;
 					}
@@ -973,193 +780,235 @@ namespace Circe
 				return result;
 			}
 			
-			//Matrix multiplication to vector, returns A*v
-			Vec<N,Real> operator*(const Vec<M,Real>& v) const
+			Mat multTranspose(const Mat& m) const
 			{
-				Vec<N,Real> result;
-				for(int i=0; i<N;++i)
+				assert(N == m.N);
+
+				Mat result(M,m.M);
+				for(int i = 0; i<M; ++i)
 				{
-					Real value = (Real)0.0;
-					for(int j = 0; j<M; ++j)
+					for(int j = 0; j<m.M; ++j)
 					{
-						value+=v(j)*get(i,j);
+						Real value = (Real)0.0;
+						for(int k=0;k<N; ++k)
+						{
+							value+=(*this)(i,k)*m(j,k);
+						}
+						result(i,j)=value;
 					}
-					result(i)=value;
-				}
+				}	
 				return result;
-			}
-			
+			}	
+
 			//Get the matrix multiplied by a scalar
-			Mat<N,M,Real> operator*(const Real& f) const
+			Mat operator*(const Real& f) const
 			{
-				Mat<N,M,Real> result;
-				for(int i = 0; i<N; ++i)
+				Mat result(M,N);
+				for(int k = 0; k<M*N; k++)
 				{
-					for(int j = 0; j<M; ++j)
-					{
-						result(i,j)=get(i,j)*f;
-					}
+					result.data[k] = data[k]*f;
+				}	
+				return result;	
+			}
+
+			Mat operator/(const Real& f) const
+			{
+				Mat result(M,N);
+				for(int k = 0; k<M*N; k++)
+				{
+					result.data[k] = data[k]/f;
 				}	
 				return result;	
 			}
 			
-			Mat<N,M,Real> operator/(const Real& f) const
+			void operator+=(const Mat& m)
 			{
-				Mat<N,M,Real> result;
-				for(int i = 0; i<N; ++i)
+				assert(M == m.M && N == m.N);
+				for(int k = 0; k<M*N; k++)
 				{
-					for(int j = 0; j<M; ++j)
-					{
-						result(i,j)=get(i,j)/f;
-					}
+					data[k]+=m.data[k];
+				}	
+			}
+			
+			Mat operator+(const Mat& m) const
+			{
+				assert(M == m.M && N == m.N);
+				Mat result(M,N);
+				for(int k = 0; k<M*N; k++)
+				{
+					result.data[k] = data[k] + m.data[k];
 				}	
 				return result;	
 			}
-			
-			void operator+=(const Mat<N,M,Real>& m)
+				
+			Mat operator-(const Mat& m) const
 			{
-				for(int i = 0; i<N; ++i)
+				assert(M == m.M && N == m.N);
+				Mat result(M,N);
+				for(int k = 0; k<M*N; k++)
 				{
-					for(int j = 0; j<M; ++j)
-					{
-						data[i*M+j] += m(i,j);
-					}
+					result.data[k] = data[k] - m.data[k];
 				}	
+				return result;	
 			}
-			
-			Mat<N,M,Real> operator+(const Mat<N,M,Real>& m) const
+
+			void operator-=(const Mat& m)
 			{
-				Mat<N,M,Real> res;
-				for(int i = 0; i<N; ++i)
+				assert(M == m.M && N == m.N);
+				for(int k = 0; k<M*N; k++)
 				{
-					for(int j = 0; j<M; ++j)
-					{
-						res(i,j)=get(i,j)+m(i,j);
-					}
-				}
-				return res;
-			}
-			
-			void operator-=(const Mat<N,M,Real>& m)
-			{
-				for(int i = 0; i<N; ++i)
-				{
-					for(int j = 0; j<M; ++j)
-					{
-						data[i*M+j]-=m(i,j);
-					}
+					data[k]-=m.data[k];
 				}	
 			}
 			
 			//Multiply by a scalar
 			void operator*=(const Real& f)
 			{
-				for(int i = 0; i<N; ++i)
+				for(int k = 0; k<M*N; k++)
 				{
-					for(int j = 0; j<M; ++j)
-					{
-						data[i*M+j]*=f;
-					}
+					data[k]*=f;
 				}
 			}
-			
-			//Get the coefficient at row i and column j
-			Real operator()(const int& i, const int& j) const
+
+			/** Solve the LU factorization of Ax = b with b = this */
+			Mat operator/(const Mat& A)
 			{
-				return data[i*M+j];
+				assert(A.M == M);
+
+				if(A.M == A.N)
+				{
+					return solveLU(A);
+				}
+
+				if(A.M > A.N)
+				{
+					return (A.transposeMult(*this))*
+								solveLU(A.transposeMult(A));
+				}
+				else
+				{
+					return A.transposeMult(*this)*
+								solveLU(A.multTranspose(A));
+				}
+			}
+
+			Mat solveLU(const Mat& A)
+			{
+				assert(M == A.M && M == A.N);
+
+				Mat LU(M,M);
+				double sum = 0.0;
+
+				for(int i = 0; i<M; i++)
+				{
+					for(int j = i; j<M; j++)
+					{
+						sum = 0.0;
+						for(int k = 0;k<i;k++)
+						{
+							sum += LU(i,k)*LU(k,j);
+						}
+						LU(i,j)=A(i,j)-sum;
+					}
+					for(int j = i+1; j<M; j++)
+					{
+						sum = 0.0;
+						for(int k = 0; k<i; k++)
+						{
+							sum += LU(j,k)*LU(k,i);
+						}
+						LU(j,i)=(A(j,i)-sum)/LU(i,i);
+					}
+				}
+				
+				Mat y(M,1);
+				for(int i = 0; i<M; i++)
+				{
+					sum = 0.0;
+					for(int k = 0;k<i;k++)
+					{
+						sum+=LU(i,k)*y(k);
+					}
+					y(i) = (*this)(i)-sum;
+				}
+
+				Mat x(M,1);
+				for(int i = M-1;i>=0;i--)
+				{
+					sum=0.0;
+					for(int k = i+1;k<M; k++)
+					{
+						sum+=LU(i,k)*x(k);
+					}
+					x(i) = (y(i)-sum)/LU(i,i);
+				}
+				return x;
+			}
+					
+			//Get the coefficient at row i and column j
+			Real operator()(const int& i, const int& j = 0) const
+			{
+				assert(i<M && j<N);
+				return data[i*N+j];
 			}
 			
 			//Set the coefficient at row i and column j
-			Real &operator()(const int& i, const int& j)
+			Real& operator()(const int& i, const int& j = 0)
 			{
-				return data[i*M+j];;
+				assert(i<M && j<N);
+				return data[i*N+j];
+			}
+
+			std::size_t getNbRows() const
+			{
+				return M;
 			}
 			
-			Real* getData()
+			std::size_t getNbCols() const
 			{
-				static Real res[N*M];
-				int k=0;
-				for(int i=0; i<M; i++)
-				{
-					for(int j=0; j<N; j++)
-					{
-						res[k] = get(j,i);
-						k++;
-					}
-				}
-				return res;
+				return N;
 			}
 			
-			Real get(const int& i, const int& j) const
-			{
-				return data[i*M+j];
-			}
-			
-			Vec<M, Real> getRow(const int& i) const
-			{
-				Vec<N, Real> row;
-				for(int j=0; j<M; j++)
-				{
-					row(j) = get(i,j);
-				}
-				return row;
-			}
-			
-			Vec<N, Real> getColumn(const int& j) const
-			{
-				Vec<N, Real> column;
-				for(int i=0; i<N; i++)
-				{
-					column(i) = get(i,j);
-				}
-				return column;
-			}
-			
-			void setRow(const int& i, const Vec<M, Real>& row)
-			{
-				for(int j=0; j<M; j++)
-				{
-					data[i*M+j] = row(j);
-				}
-			}
-			
-			void setColumn(const int& j, const Vec<N, Real>& column)
-			{
-				for(int i=0; i<N; i++)
-				{
-					data[i*M+j] = column(i);
-				}
-			}
-				
 		private:
-			//std::vector<Real> data;
-			Real data[N*M];
+			std::vector<Real> data;
+			std::size_t M,N;
 	};
 	
-	using Mat44=Mat<4, 4, float>;
+	//using Mat44=Mat<4, 4>;
+	static Real cross(const Vec<2>& a, const Vec<2>& b)
+	{
+		return a(0)*b(1)-a(1)*b(0);
+	}
+	
+	static Vec<3> cross(const Vec<3>& a, const Vec<3>& b)
+	{
+		return Vec<3>(a(1)*b(2)-a(2)*b(1),
+					 -a(0)*b(2)+a(2)*b(0),
+					  a(0)*b(1)-a(1)*b(0));
+	}
 
 	struct Complex
 	{
 		public:
-			inline Complex(const float& angle):c(cos(angle)), s(sin(angle))
+			inline Complex(const Real& angle):c(cos(angle)), s(sin(angle))
 			{}
 			
-			inline Complex(const float& real, const float& imaginary):
+			inline Complex(const Real& real, const Real& imaginary):
 							c(real), s(imaginary)
 			{}
 	
-			inline	Complex(const Mat44& m):Complex(m.get(0,0), m.get(0,1))
+			inline	Complex(const Mat& m):Complex(m(0,0), m(0,1))
 			{}
 
-			inline float getAngle() const
+			inline Real getAngle() const
 			{
 				return atan2(s,c);
 			}
 			
 			inline Complex operator*(const Complex& q) const
 			{
-				float a=c;float b=s;
-				float c=q.c;float d=q.s;
+				Real a=c;Real b=s;
+				Real c=q.c;Real d=q.s;
 				return Complex(a*c-b*d, b*c+a*d);
 			}
 			
@@ -1170,14 +1019,14 @@ namespace Circe
 				return *this;
 			}
 			
-			inline float length() const
+			inline Real length() const
 			{
 				return sqrt(c*c+s*s);
 			}
 			
 			inline Complex normalize()
 			{
-				float length = (*this).length();
+				Real length = (*this).length();
 				c/=length;
 				s/=length;
 				return *this;
@@ -1185,53 +1034,53 @@ namespace Circe
 			
 			inline Complex conjugate()
 			{
-				s*=-1.0f;
+				s*=-(Real)(1.0);
 				return *this;
 			}
 			
-			inline float getReal() const
+			inline Real getReal() const
 			{
 				return c;
 			}
 			
-			inline float getImaginary() const
+			inline Real getImaginary() const
 			{
 				return s;
 			}
 			
-			inline void addAngle(const float& dtheta, const float& dt)
+			inline void addAngle(const Real& dtheta)
 			{
 				Complex q(dtheta);
-				float ctemp = c*q.c*dt - s*q.s*dt;
-				s = c*q.s*dt + s*q.c*dt;
+				Real ctemp = c*q.c - s*q.s;
+				s = c*q.s + s*q.c;
 				c=ctemp;
 			}
 	
 		private:
-			float c,s;
+			Real c,s;
 	};
 	
 	
 	class Quaternion
 	{
 		public:
-			inline Quaternion():w(1.0f), x(0.0f), y(0.0f), z(0.0f)
+			inline Quaternion():w((Real)1.0), x(0.0), y(0.0), z(0.0)
 			{}
 			
-			inline Quaternion(const float& w, const float& x, 
-							  const float& y, const float& z):
+			inline Quaternion(const Real& w, const Real& x, 
+							  const Real& y, const Real& z):
 								w(w), x(x), y(y), z(z)
 			{}
 			
-			inline Quaternion(const float& roll, const float& pitch, 
-								const float& yaw)
+			inline Quaternion(const Real& roll, const Real& pitch, 
+								const Real& yaw)
 			{
-				float cy = cos(yaw*0.5f);
-				float sy = sin(yaw*0.5f);
-				float cp = cos(pitch*0.5f);
-				float sp = sin(pitch*0.5f);
-				float cr = cos(roll*0.5f);
-				float sr = sin(roll*0.5f);
+				Real cy = cos(yaw*0.5);
+				Real sy = sin(yaw*0.5);
+				Real cp = cos(pitch*0.5);
+				Real sp = sin(pitch*0.5);
+				Real cr = cos(roll*0.5);
+				Real sr = sin(roll*0.5);
 				
 				w = cy*cp*cr+sy*sp*sr;
 				x = cy*cp*sr-sy*sp*cr;
@@ -1242,47 +1091,51 @@ namespace Circe
 				// quaternion and Euler angles
 			}
 	
-			inline Quaternion(const Mat44& m)
+			inline Quaternion(const Mat& m)
 			{
-				float trace = m.get(0, 0) + m.get(1, 1) + m.get(2, 2);
+				Real trace = m(0, 0) + m(1, 1) + m(2, 2);
 				
 				if(trace > 0)
 				{
-					float s = 0.5f / (float)std::sqrt(trace+ 1.0f);
-					w = 0.25f / s;
-					x = (m.get(1, 2) - m.get(2, 1)) * s;
-					y = (m.get(2, 0) - m.get(0, 2)) * s;
-					z = (m.get(0, 1) - m.get(1, 0)) * s;
+					Real s = 0.5 / (Real)std::sqrt(trace+ 1.0);
+					w = 0.25 / s;
+					x = (m(1, 2) - m(2, 1)) * s;
+					y = (m(2, 0) - m(0, 2)) * s;
+					z = (m(0, 1) - m(1, 0)) * s;
 				}
 				else
 				{
-					if(m.get(0, 0) > m.get(1, 1) && m.get(0, 0) > m.get(2, 2))
+					if(m(0, 0) > m(1, 1) && m(0, 0) 
+							> m(2, 2))
 					{
-						float s = 2.0f * (float)std::sqrt(1.0f + m.get(0, 0) - m.get(1, 1) - m.get(2, 2));
-						w = (m.get(1, 2) - m.get(2, 1)) / s;
+						Real s = 2.0f * (Real)std::sqrt(1.0f + m(0, 0)
+							   		- m(1, 1) - m(2, 2));
+						w = (m(1, 2) - m(2, 1)) / s;
 						x = 0.25f * s;
-						y = (m.get(1, 0) + m.get(0, 1)) / s;
-						z = (m.get(2, 0) + m.get(0, 2)) / s;
+						y = (m(1, 0) + m(0, 1)) / s;
+						z = (m(2, 0) + m(0, 2)) / s;
 					}
-					else if(m.get(1, 1) > m.get(2, 2))
+					else if(m(1, 1) > m(2, 2))
 					{
-						float s = 2.0f * (float)std::sqrt(1.0f + m.get(1, 1) - m.get(0, 0) - m.get(2, 2));
-						w = (m.get(2, 0) - m.get(0, 2)) / s;
-						x = (m.get(1, 0) + m.get(0, 1)) / s;
+						Real s = 2.0f * (Real)std::sqrt(1.0f + m(1, 1)
+							   	- m(0, 0) - m(2, 2));
+						w = (m(2, 0) - m(0, 2)) / s;
+						x = (m(1, 0) + m(0, 1)) / s;
 						y = 0.25f * s;
-						z = (m.get(2, 1) + m.get(1, 2)) / s;
+						z = (m(2, 1) + m(1, 2)) / s;
 					}
 					else
 					{
-						float s = 2.0f * (float)std::sqrt(1.0f + m.get(2, 2) - m.get(0, 0) - m.get(1, 1));
-						w = (m.get(0, 1) - m.get(1, 0) ) / s;
-						x = (m.get(2, 0) + m.get(0, 2) ) / s;
-						y = (m.get(1, 2) + m.get(2, 1) ) / s;
+						Real s = 2.0f * (Real)std::sqrt(1.0f + m(2, 2)
+							   	- m(0, 0) - m(1, 1));
+						w = (m(0, 1) - m(1, 0) ) / s;
+						x = (m(2, 0) + m(0, 2) ) / s;
+						y = (m(1, 2) + m(2, 1) ) / s;
 						z = 0.25f * s;
 					}
 				}
 
-				float length = (float)std::sqrt(x * x + y * y + z * z + w * w);
+				Real length = -(Real)std::sqrt(x*x + y*y + z*z + w*w);
 				x /= length;
 				y /= length;
 				z /= length;
@@ -1311,24 +1164,24 @@ namespace Circe
 			
 			inline void operator*=(const Quaternion& q)
 			{
-				float w0 = w*q.w - x*q.x - y*q.y - z*q.z;
-				float x0 = w*q.x + x*q.w + y*q.z - z*q.y;
-				float y0 = w*q.y - x*q.z + y*q.w + z*q.x;
-				float z0 = w*q.z + x*q.y - y*q.x + z*q.w;
+				Real w0 = w*q.w - x*q.x - y*q.y - z*q.z;
+				Real x0 = w*q.x + x*q.w + y*q.z - z*q.y;
+				Real y0 = w*q.y - x*q.z + y*q.w + z*q.x;
+				Real z0 = w*q.z + x*q.y - y*q.x + z*q.w;
 				w = w0;
 				x = x0;
 				y = y0;
 				z = z0;
 			}
 			
-			inline void addAngle(const float& roll, const float& pitch, 
-								 const float& yaw, const float& dt)
+			inline void addAngle(const Real& roll, const Real& pitch, 
+								 const Real& yaw)
 			{
 				
-				Quaternion q = (*this)*Quaternion(0.0f, 
-												  -roll*0.5f*dt, 
-												  -pitch*0.5f*dt, 
-												  -yaw*0.5f*dt);
+				Quaternion q = (*this)*Quaternion(0.0, 
+												  -roll*0.5, 
+												  -pitch*0.5, 
+												  -yaw*0.5);
 				w+=q.w;
 				x+=q.x;
 				y+=q.y;
@@ -1337,14 +1190,14 @@ namespace Circe
 				normalize();
 			}
 			
-			inline float length() const
+			inline Real length() const
 			{
 				return sqrt(w*w+x*x+y*y+z*z);
 			}
 			
 			inline Quaternion normalize()
 			{
-				float length = (*this).length();
+				Real length = (*this).length();
 				w/=length;
 				x/=length;
 				y/=length;
@@ -1355,9 +1208,9 @@ namespace Circe
 			
 			inline Quaternion conjugate()
 			{
-				x*=-1.0f;
-				y*=-1.0f;
-				z*=-1.0f;
+				x*=-1.0;
+				y*=-1.0;
+				z*=-1.0;
 
 				return *this;
 			}
@@ -1367,89 +1220,212 @@ namespace Circe
 				return Quaternion(w, -x, -y, -z);
 			}
 			
-			template<typename Real>
-			Vec<3, Real> rotate(const Vec<3, Real>& v2)
+			Vec<2> rotate(const Vec<2>& v2) const
 			{
+				Vec<3> r = rotate(Vec<3>(v2(0), v2(1), 0.0));
+				return Vec<2>(r(0), r(1));
+			}
+
+			Vec<3> rotate(const Vec<3>& v2) const
+			{
+				if(v2.dot(v2) < 1e-10) return Vec<3>(v2(0),v2(1),v2(2));
 				Quaternion v((Real)0.0, v2(0), v2(1), v2(2));
 				Quaternion p(*this);
 				p.normalize();
 				Quaternion pConj=p.getConjugate();
 				Quaternion result = p*v*pConj;
-				Vec<3, Real> v3;
+				Vec<3> v3;
 				v3(0)=result.getX();
 				v3(1)=result.getY();
 				v3(2)=result.getZ();
 				return v3;
 			}
 			
-			template<typename Real>
-			Vec<3, Real> rotateInv(const Vec<3, Real>& v2)
+			Vec<2> rotateInv(const Vec<2>& v2) const
 			{
+				Vec<3> r = rotateInv(Vec<3>(v2(0), v2(1), 0.0));
+				return Vec<2>(r(0), r(1));
+			}
+
+			Vec<3> rotateInv(const Vec<3>& v2) const
+			{
+				if(v2.dot(v2) < 1e-10) return Vec<3>(v2(0),v2(1),v2(2));
 				Quaternion v((Real)0.0, v2(0), v2(1), v2(2));
 				Quaternion p(*this);
 				p.normalize();
 				Quaternion pConj=p.getConjugate();
 				Quaternion result = pConj*v*p;
-				Vec<3, Real> v3;
+				Vec<3> v3;
 				v3(0)=result.getX();
 				v3(1)=result.getY();
 				v3(2)=result.getZ();
 				return v3;
 			}
 
-			inline float getW() const
+			/** https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles  */
+			Vec<3> toEulerAngle() const
+			{
+				Real sinr_cosp = 2.0*(w*x+y*z);
+				Real cosr_cosp = 1.0-2.0*(x*x+y*y);
+				Real roll = (Real)(std::atan2(sinr_cosp, cosr_cosp));
+
+				Real sinp = 2.0*(w*y-z*x);
+				Real pitch = std::asin(sinp);
+				if(std::abs(sinp) >= 1)
+					pitch = std::copysign(3.14159/2.0, sinp);
+
+				Real siny_cosp = 2.0*(w*z+x*y);
+				Real cosy_cosp = 1.0-2.0*(y*y+z*z);
+				Real yaw = (Real)(std::atan2(siny_cosp, cosy_cosp));
+
+				return Vec<3>(roll, pitch, yaw);
+			}
+
+			Real angleWith(const Quaternion& other)
+			{
+				Vec<3> v1 = rotate(Vec<3>(1,0,0)); 
+				Vec<3> v2 = other.rotate(Vec<3>(1,0,0)); 
+				Vec<3> v3 = cross(v1,v2);
+			
+				if(dot(v3,Vec<3>(0,0,1)) > 0)
+					return -std::acos(dot(v1,v2));
+				
+				return std::acos(dot(v1,v2));
+			}
+
+			void lookAt(const Vec<2>& lookAt)
+			{
+				Vec<2> fwd = Circe::normalize(lookAt);
+
+				Mat m(3,3);
+
+				m(0,0) = fwd(0);
+				m(1,0) = fwd(1);
+				m(0,1) = -fwd(1);
+				m(1,1) = fwd(0);
+				m(2,2) = 1.0;
+
+				Quaternion q(m);
+
+				w = q.w;
+				x = q.x;
+				y = q.y;
+				z = q.z;
+			}
+
+			void lookAt(const Vec<3>& lookAt, const Vec<3>& up0)
+			{
+				Vec<3> fwd = Circe::normalize(lookAt);
+				Vec<3> right = Circe::normalize(cross(up0, fwd));
+				Vec<3> up = cross(fwd, right);
+
+				Mat m(3,3);
+				for(int i = 0; i<3; i++)
+				{
+					m(i,0) = fwd(i);
+					m(i,1) = right(i);
+					m(i,2) = up(i);
+				}
+
+				Quaternion q(m);
+
+				w = q.w;
+				x = q.x;
+				y = q.y;
+				z = q.z;
+			}
+
+			inline Real getW() const
 			{
 				return w;
 			}
 			
-			inline float getX() const
+			inline Real getX() const
 			{
 				return x;
 			}
 			
-			inline float getY() const
+			inline Real getY() const
 			{
 				return y;
 			}
 			
-			inline float getZ() const
+			inline Real getZ() const
 			{
 				return z;
 			}
 	
-	
-	
-
 		private:
-			float x,y,z,w;
+			Real x,y,z,w;
 	};
 	
-	static Mat44 positionMatrix(const float& x, const float& y, 
-								const float& z)
+
+
+	static Mat transpose(const Mat& m)
 	{
-		Mat44 m;
-		m.setIdentity();
+		Mat result(m.getNbCols(),m.getNbRows());
+
+		for(int i = 0; i<m.getNbRows(); ++i)
+		{
+			for(int j = 0; j<m.getNbCols(); ++j)
+			{
+				result(j,i)=m(i,j);
+			}
+		}	
+
+		return result;
+	}
+
+	static Mat identity(const std::size_t M, const std::size_t N)
+	{
+		Mat result(M,N);
+
+		for(int i = 0; i<min(N, M); ++i)
+		{
+			result(i,i) = 1.0;
+		}
+		
+		return result;	
+	}
+
+	static Mat crossMatrix(const Vec<3> a)
+	{
+		Mat m(3,3);
+
+		m(0,1) = -a(2);
+		m(0,2) =  a(1);
+		m(1,0) =  a(2);
+		m(1,2) = -a(0);
+		m(2,0) = -a(1);
+		m(2,1) =  a(0);
+
+		return m;	
+	}
+
+	static Mat positionMatrix(const Real& x, const Real& y, 
+								const Real& z)
+	{
+		Mat m = identity(4,4);
 		m(0,3)=x;
 		m(1,3)=y;
 		m(2,3)=z;
 		return m;
 	}
 	
-	static Mat44 positionMatrix(const Vec2& v)
+	static Mat positionMatrix(const Vec2& v)
 	{
-		return positionMatrix(v(0), v(1), 0.0f);
+		return positionMatrix(v(0), v(1), 0.0);
 	}
 	
-	static Mat44 positionMatrix(const Vec3& v)
+	static Mat positionMatrix(const Vec3& v)
 	{
 		return positionMatrix(v(0), v(1), v(2));
 	}
 	
-	static Mat44 scaleMatrix(const float& x, const float& y, 
-							 const float& z)
+	static Mat scaleMatrix(const Real& x, const Real& y, 
+							 const Real& z)
 	{
-		Mat44 m;
-		m.setIdentity();
+		Mat m = identity(4,4);
 		m(0,0)=x;
 		m(1,1)=y;
 		m(2,2)=z;
@@ -1457,23 +1433,23 @@ namespace Circe
 		return m;
 	}
 
-	static Mat44 scaleMatrix(const Vec<2>& v)
+	static Mat scaleMatrix(const Vec<2>& v)
 	{
 		return scaleMatrix(v(0), v(1), 1.0f);
 	}
 	
-	static Mat44 scaleMatrix(const Vec<3>& v)
+	static Mat scaleMatrix(const Vec<3>& v)
 	{
 		return scaleMatrix(v(0), v(1), v(2));
 	}
 	
 	//Get the rotation matrix
-	static Mat44 rotationMatrix(const Complex& q)
+	static Mat rotationMatrix(const Complex& q)
 	{
-		float c = q.getReal();
-		float s = q.getImaginary();
+		Real c = q.getReal();
+		Real s = q.getImaginary();
 		
-		Mat44 m;
+		Mat m(4,4);
 		
 		m(0,0)=c;		m(0,1)=s;		m(0,2)=0.0f;	m(0,3)=0.0f;
 		m(1,0)=-s;		m(1,1)=c;		m(1,2)=0.0f;	m(1,3)=0.0f;
@@ -1483,42 +1459,57 @@ namespace Circe
 		return m;
 	}
 	
-	static Mat44 rotationMatrix(const Quaternion& q)
+	static Mat rotationMatrix(const Quaternion& q)
 	{
-		float x = q.getX();
-		float y = q.getY();
-		float z = q.getZ();
-		float w = q.getW();
+		Real x = q.getX();
+		Real y = q.getY();
+		Real z = q.getZ();
+		Real w = q.getW();
 		
-		Mat44 m;
+		Mat m(4,4);
 		
-		m(0,0)=1.0f-(2.0f*y*y+2.0f*z*z);	m(0,1)=2.0f*x*y+2.0f*z*w;			m(0,2)=2.0f*x*z-2.0f*y*w;			m(0,3)=0.0f;
-		m(1,0)=2.0f*x*y-2.0f*z*w;			m(1,1)=1.0f-(2.0f*x*x+2.0f*z*z);	m(1,2)=2.0f*y*z+2.0f*x*w;			m(1,3)=0.0f;
-		m(2,0)=2.0f*x*z+2.0f*y*w;			m(2,1)=2.0f*y*z-2.0f*x*w;			m(2,2)=1.0f-(2.0f*x*x+2.0f*y*y);	m(2,3)=0.0f;
-		m(3,0)=0.0f;						m(3,1)=0.0f;						m(3,2)=0.0f;						m(3,3)=1.0f;
+		m(0,0)=1.0f-(2.0f*y*y+2.0f*z*z);	
+		m(0,1)=2.0f*x*y+2.0f*z*w;			
+		m(0,2)=2.0f*x*z-2.0f*y*w;
+		m(0,3)=0.0f;
+
+		m(1,0)=2.0f*x*y-2.0f*z*w;	
+		m(1,1)=1.0f-(2.0f*x*x+2.0f*z*z);
+		m(1,2)=2.0f*y*z+2.0f*x*w;
+		m(1,3)=0.0f;
+
+		m(2,0)=2.0f*x*z+2.0f*y*w;		
+		m(2,1)=2.0f*y*z-2.0f*x*w;			
+		m(2,2)=1.0f-(2.0f*x*x+2.0f*y*y);	
+		m(2,3)=0.0f;
+
+		m(3,0)=0.0f;
+		m(3,1)=0.0f;			
+		m(3,2)=0.0f;
+		m(3,3)=1.0f;
 		
 		return m;
 	}
 	
-	static Mat44 rotationMatrix(const Vec<2>& fwdAxis)
+	static Mat rotationMatrix(const Vec<2>& fwdAxis)
 	{
 		Vec<2> f = fwdAxis;
 		normalize(f);
 		
-		Mat44 rotationMatrix;
+		Mat rotationMatrix(4,4);
 
 		rotationMatrix(0,0) = f(0);
-		rotationMatrix(0,1) = f(1);
-		rotationMatrix(1,0) = -f(0);
-		rotationMatrix(0,1) = f(1);
+		rotationMatrix(1,0) = f(1);
+		rotationMatrix(0,1) = -f(0);
+		rotationMatrix(1,1) = f(1);
 		
 		rotationMatrix(2,2) = 1.0f;
 		rotationMatrix(3,3) = 1.0f;
 		return rotationMatrix;
 	}
 	
-	static Mat44 rotationMatrix(const Vec<3>& leftAxis, 
-								const Vec<3>& fwdAxis)
+	static Mat rotationMatrix(const Vec<3>& leftAxis, 
+							  const Vec<3>& fwdAxis)
 	{
 		Vec<3> l = leftAxis;
 		normalize(l);
@@ -1530,30 +1521,29 @@ namespace Circe
 		normalize(f);
 		Vec<3> u = cross(l, f);
 		
-		Mat44 rotationMatrix;
-		for(int j = 0; j<3; j++)
+		Mat rotationMatrix(4,4);
+		for(int i = 0; i<3; i++)
 		{
-			rotationMatrix(0,j) = l(j);
-			rotationMatrix(1,j) = f(j);
-			rotationMatrix(2,j) = u(j);
+			rotationMatrix(i,0) = l(i);
+			rotationMatrix(i,1) = f(i);
+			rotationMatrix(i,2) = u(i);
 		}
 		rotationMatrix(3,3) = 1.0f;
 		return rotationMatrix;
 	}
-/*	
-	
-*/	
-	static Mat44 orthoProjection(const float& width, const float& height, const float& nearField, const float& farField)
+
+	static Mat orthoProjection(const Real& width, const Real& height, 
+							const Real& nearField, const Real& farField)
 	{
-		float left=-width/2.0f;
-		float right=width/2.0f;
-		float bottom=-height/2.0f;
-		float top=height/2.0f;
-		Mat44 m;
-		m(0,0)=2.0f/width;
-		m(1,1)=2.0f/height;
-		m(2,2)=2.0f/(farField-nearField);
-		m(3,3)=1.0f;
+		Real left=-width/2.0;
+		Real right=width/2.0;
+		Real bottom=-height/2.0;
+		Real top=height/2.0;
+		Mat m(4,4);
+		m(0,0)=2.0/width;
+		m(1,1)=2.0/height;
+		m(2,2)=2.0/(farField-nearField);
+		m(3,3)=1.0;
 		
 		m(0,3)=-(right+left)/(right-left);
 		m(1,3)=-(top+bottom)/(top-bottom);
@@ -1562,38 +1552,42 @@ namespace Circe
 		return m;
 	}
 	
-	static Mat44 perspectiveProjection(const float& fieldOfView, const float& aspectRatio, const float& nearField, const float& farField)
+	static Mat perspectiveProjection(const Real& fieldOfView, 
+									   const Real& aspectRatio, 
+									   const Real& nearField, 
+									   const Real& farField)
 	{
-		Mat44 m;
-		float tanHalfFov=std::tan(fieldOfView*3.141593/(2.0*180));
-		float range = farField-nearField;
-		m(0,0) = 1/(aspectRatio*tanHalfFov);
-		m(1,1) = 1/(tanHalfFov);
+		Mat m(4,4);
+		Real tanHalfFov=std::tan(fieldOfView*3.141593/(2.0*180.0));
+		Real range = farField-nearField;
+		m(0,0) = 1.0/(aspectRatio*tanHalfFov);
+		m(1,1) = 1.0/(tanHalfFov);
 		m(2,2) = (nearField+farField)/range;
-		m(2,3) = -2*farField*nearField/range;
-		m(3,2) = 1;
+		m(2,3) = -2.0*farField*nearField/range;
+		m(3,2) = 1.0;
 		return m;
 	}
 
-	class Transform3
+	template<std::size_t N>
+	class Trans
 	{
 		public:
-			inline Transform3(const Vec3& position0 = Vec3(0.0f,0.0f,0.0f),
+			inline Trans(const Vec<N>& position0 = Vec<N>(),
 					   const Quaternion& rotation = Quaternion(), 
-					   const Vec3& scale = Vec3(1.0f, 1.0f, 1.0f)) :
+					   const Vec<N>& scale = Vec<N>(1.0)) :
 						position(position0), rotation(rotation),
 						scale(scale)
 			{}
 
 			
-			inline Transform3(const Transform3& transform)
+			inline Trans(const Trans<N>& transform)
 			{
 				position = transform.position;
 				rotation = transform.rotation;
 				scale = transform.scale;
 			}
 			
-			inline Transform3& operator=(const Transform3& transform)
+			inline Trans<N>& operator=(const Trans<N>& transform)
 			{	
 				position = transform.position;
 				rotation = transform.rotation;
@@ -1601,29 +1595,21 @@ namespace Circe
 				return *this;
 			}
 
-			inline Vec3& getPosition()
+			inline Vec<N>& getPosition()
 			{
 				return position;
 			}
 			
-			inline Vec3 getPosition() const
+			inline Vec<N> getPosition() const
 			{
 				return position;
 			}
 
-			inline void setPosition(const Vec3& newPosition)
+			inline void setPosition(const Vec<N>& newPosition)
 			{				
 				position = newPosition;			
 			}
 			
-			inline void setPosition(const float& x, const float& y, 
-									const float& z)
-			{
-				position(0) = x;
-				position(1) = y;
-				position(2) = z;
-			}
-	
 			inline Quaternion& getRotation()
 			{
 				return rotation;
@@ -1634,81 +1620,54 @@ namespace Circe
 				return rotation;
 			}		
 
-			inline Vec3& getScale()
+			inline Vec<N>& getScale()
 			{
 				return scale;
 			}
 			
-			inline Vec3 getScale() const
+			inline Vec<N> getScale() const
 			{
 				return scale;
 			}
 
-			inline void setScale(const Vec3& newScale)
+			inline void setScale(const Vec<N>& newScale)
 			{
 				scale = newScale;
 			}
-
-			inline void setScale(const float& x, const float& y, 
-										const float& z)
-			{
-				scale(0) = x;
-				scale(1) = y;
-				scale(2) = z;
-			}	
 			
-			inline void rotate(const Vec3& eulerAngles, const float& dt)
+			inline void rotate(const Real angle)
+			{
+				rotation.addAngle(0.0, 0.0, angle);
+			}
+
+			inline void rotate(const Vec3& eulerAngles)
 			{
 				rotation.addAngle(eulerAngles(0), eulerAngles(1), 
-								eulerAngles(2), dt);
+								eulerAngles(2));
 			}
 			
-			inline void translate(const Vec3& v)
+			inline void translate(const Vec<N>& v)
 			{
 				position += v;
 			}
 			
-			inline void resize(const float& scaleRatio)
+			inline void resize(const Real& scaleRatio)
 			{
 				scale*=scaleRatio;
 			}
 			
-			inline Mat44 getTransformMatrix() const
+			inline Mat getTransformMatrix() const
 			{
-				Mat44 res = (positionMatrix(position)) 
+				Mat res = (positionMatrix(position)) 
 						   * (rotationMatrix(rotation)) 
 						   * (scaleMatrix(scale));
 
 				return res;
-/*				if(std::shared_ptr<Transform3> parent = m_parent.lock())
-				{
-					return parent->getTransformMatrix()*res;
-				}
-				else
-				{
-					return res;
-				}
-*/			}
-/*			
-			inline void attachTo(const std::shared_ptr<Transform3>& parent)
-			{
-				m_parent = parent;
 			}
-		
-			inline void detachFrom(const std::shared_ptr<Transform3>& 
-									parent)
+
+			inline Vec<N> toGlobal(const Vec<N>& vec, const bool translate)
 			{
-				m_parent.reset();
-			}
-			
-			inline std::weak_ptr<Transform3> getParent()
-			{
-				return m_parent;
-			}	
-*/
-			inline Vec3 toGlobal(const Vec3& vec, const bool translate)
-			{
-				Vec3 res = rotation.rotateInv(vec);
+				Vec<N> res = rotation.rotateInv(vec);
 
 				if(translate)
 					res = res + position;
@@ -1716,12 +1675,51 @@ namespace Circe
 				return res;
 			}
 
+			inline Vec<N> toLocal(const Vec<N>& vec, const bool translate)
+			{
+				Vec<N> res = vec;
+
+				if(translate)
+					res = res - position;
+
+				res = rotation.rotate(res);
+
+				return res;
+			}
+
+			inline Real angleWith(const Trans<N>& other)
+			{
+				return rotation.angleWith(other.rotation);
+			}
+
+			inline void lookAt(const Vec<2>& location)
+			{
+				rotation.lookAt(location-position);
+			}
+			
+			inline void lookAt(const Vec<3>& location)
+			{
+				rotation.lookAt(location-position, Vec<3>(0,0,1));
+			}
+
+		
+			/** Modify the transform such that one end is a location p1 
+			  	and the other end is at location p2 (useful for lines)
+			 */	
+			inline void lineUp(const Vec<N>& p1, const Vec<N>& p2, 
+							   const Real scaleFactor = 1.0)
+			{	
+				position = (p1+p2)/2.0;
+
+				scale(0) = norm(p1-p2)*scaleFactor;	
+
+				lookAt(p2);
+			}	
+
 		private:
-			/** Attitude stored in LOCAL reference frame */
-			Vec3 position;
+			Vec<N> position;
 			Quaternion rotation;
-			Vec3 scale;
-			//std::weak_ptr<Transform3> m_parent;
+			Vec<N> scale;
 	};
 	
 
@@ -1731,16 +1729,16 @@ namespace Circe
 		return strm << "]";
 	}
 	
-	
-	inline std::ostream& operator<<(std::ostream &strm, const Quaternion &q)
+	inline std::ostream& operator<<(std::ostream &strm, 
+									const Quaternion &q)
 	{
 		strm << "[" << q.getW() << ", " << q.getX() 
 			 << ", " << q.getY() << ", " << q.getZ();
 		return strm << "]";
 	}
 	
-	template<std::size_t N, typename Real>
-	std::ostream& operator<<(std::ostream &strm, const Vec<N, Real> &v)
+	template<std::size_t N>
+	std::ostream& operator<<(std::ostream &strm, const Vec<N> &v)
 	{
 		strm << "[" << v(0);
 		for(int i=1; i<N;++i){
@@ -1749,13 +1747,13 @@ namespace Circe
 		return strm << "]";
 	}
 
-	template<std::size_t N, std::size_t M, typename Real>
-	std::ostream& operator<<(std::ostream &strm, const Mat<N, M, Real> &m)
+	inline std::ostream& operator<<(std::ostream &strm, const Mat& m)
 	{
 		std::cout.precision(3);
-		for(int i=0; i<N;++i){
+		strm << m.getNbRows() << " x " << m.getNbCols() << std::endl;
+		for(int i=0; i<m.getNbRows(); i++){
 			strm << "|" << m(i,0);
-			for(int j=1; j<M; ++j)
+			for(int j=1; j<m.getNbCols(); j++)
 			{
 				strm << ",\t" << m(i,j);
 			}

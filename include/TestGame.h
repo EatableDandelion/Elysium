@@ -1,29 +1,36 @@
 #pragma once
 #include <iostream>
 #include <Circe/Circe.h>
-#include "Display.h"
-#include "Shader.h"
-#include "Mesh.h"
-#include "Texture.h"
-#include "Model.h"
-#include "Camera.h"
-#include "Lights.h"
-#include "Assets.h"
-#include "RenderingEngine.h"
-#include "Event.h"
-#include "Player.h"
-#include "Input.h"
-#include "Game.h"
+#include "Rendering/Display.h"
+#include "Rendering/Shader.h"
+#include "Rendering/Mesh.h"
+#include "Rendering/Texture.h"
+#include "Rendering/Model.h"
+#include "Game/Camera.h"
+#include "Rendering/Lights.h"
+#include "Rendering/Assets.h"
+#include "Rendering/RenderingEngine.h"
+#include "Game/Event.h"
+#include "Game/Player.h"
+#include "Game/Input.h"
+#include "Game/Game.h"
+#include "Physics/PhysicsComponent.h"
+#include "Physics/Constraint.h"
+#include "Physics/Physics.h"
 
+using namespace Elysium;
 class TestGame : public Elysium::Game
 {
-	public:	
-		virtual void init(Elysium::RenderingEngine& renderingEngine);
+	public:
+		TestGame(const std::string& name, 
+				 const int width, 
+				 const int height);
 
-		virtual void update();
+		virtual void init(RenderingEngine& renderingEngine);
+
+		virtual void update(const Real dt, std::vector<Entity>& entities);
 
 	private:
-		Elysium::Model sprite;
-		Elysium::Model cyborg;
-		std::shared_ptr<Elysium::Mover> mover;
+		std::shared_ptr<Mover> mover;
+		Entity sprite1, sprite2, sprite3;
 };
