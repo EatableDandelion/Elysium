@@ -3,7 +3,7 @@
 
 namespace Elysium
 {
-	class DirectionalLight : public Component
+	class DirectionalLight
 	{
 		public:
 			DirectionalLight(const Vec3& direction,
@@ -23,7 +23,7 @@ namespace Elysium
 			Vec3 m_hue;
 	};
 
-	class PointLight : public Component
+	class PointLight
 	{
 		public:
 			PointLight(const Vec3& position,
@@ -51,11 +51,13 @@ namespace Elysium
 
 			virtual void init(Renderer& renderer, Shader& shader);
 
-			virtual void draw(std::vector<Entity>& entities,
-							  Renderer& renderer, Shader& shader);
+			virtual void draw(Renderer& renderer, Shader& shader);
+
+			void addLight(const DirectionalLight& light);
 
 		private:
 			Mesh m_mesh;
+			std::vector<DirectionalLight> m_lights;
 	};
 	
 	class PointLightPass : public RenderingPass
@@ -65,11 +67,13 @@ namespace Elysium
 
 			virtual void init(Renderer& renderer, Shader& shader);
 
-			virtual void draw(std::vector<Entity>& entities,
-							  Renderer& renderer, Shader& shader);
+			virtual void draw(Renderer& renderer, Shader& shader);
+
+			void addLight(const PointLight& light);
 
 		private:
 			Mesh m_mesh;
+			std::vector<PointLight> m_lights;
 	};
 
 	class AmbientPass : public RenderingPass
@@ -80,8 +84,7 @@ namespace Elysium
 
 			virtual void init(Renderer& renderer, Shader& shader);
 
-			virtual void draw(std::vector<Entity>& entities,
-							  Renderer& renderer, Shader& shader);
+			virtual void draw(Renderer& renderer, Shader& shader);
 
 			void setIntensity(const Real intensity);
 

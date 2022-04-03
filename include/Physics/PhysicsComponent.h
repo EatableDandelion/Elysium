@@ -1,12 +1,13 @@
 #pragma once
 #include "Circe/Circe.h"
 #include "Game/ECS.h"
+#include "Physics/CollisionDetection.h"
 
-namespace Elysium
+namespace Physics
 {
 	class ForceGenerator;
 
-	class PhysicsComponent : public Component
+	class PhysicsComponent : public Elysium::Component
 	{
 		public:
 			PhysicsComponent(const Real mass, const Vec& dimension,
@@ -52,6 +53,8 @@ namespace Elysium
 			Vec3 m_loads;		//Force and moment;
 			Real M_inv;			
 			Real I_inv;
+			
+			Shape m_collider;
 
 			Transform m_transform;
 			std::vector<std::shared_ptr<ForceGenerator>> m_forces;

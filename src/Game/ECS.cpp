@@ -30,6 +30,14 @@ namespace Elysium
 		return m_id;
 	}
 
+	void EntityData::update(Entity& entity, const Real dt)
+	{
+		for(auto component : m_components)
+		{
+			component.second->update(entity, dt);
+		}
+	}
+
 	EntityID EntityData::getID() const
 	{
 		return id;

@@ -61,9 +61,18 @@ namespace Elysium
 			virtual void init(Renderer& renderer, Shader& shader) = 0;
 
 			/** Set up the pass, draw all the models, finish pass */
-			virtual void draw(std::vector<Entity>& entities,
-							  Renderer& renderer,
+			virtual void draw(Renderer& renderer,
 							  Shader& shader) = 0;
+	
+
+			virtual void startDraw(Renderer& renderer){};
+
+			virtual void draw(Model& model,
+					  const Transform transform, 
+					  Renderer& renderer,
+					  Shader& shader){};
+
+			virtual void endDraw(Renderer& renderer){};
 	};
 
 	class GeometryPass : public RenderingPass
@@ -71,15 +80,27 @@ namespace Elysium
 		public:
 			virtual void init(Renderer& renderer, Shader& shader);
 
-			virtual void draw(std::vector<Entity>& entities,
-							  Renderer& renderer,
+			void startDraw(Renderer& renderer);
+
+			void draw(Model& model,
+					  const Transform transform, 
+					  Renderer& renderer,
+					  Shader& shader);
+
+			virtual void draw(Renderer& renderer,
 							  Shader& shader);
+
+		private:
+			bool wasInit = false;
 	};
 
 	struct DebugObject
 	{
 		Mesh m_mesh;
 		Transform m_transform;
+		Vec3 m_color;
+
+		DebugObject();
 	};
 
 	class DebugPass : public RenderingPass
@@ -87,13 +108,29 @@ namespace Elysium
 		public:
 			virtual void init(Renderer& renderer, Shader& shader);
 
-			virtual void draw(std::vector<Entity>& entities,
-							  Renderer& renderer,
+			virtual void draw(Renderer& renderer,
 							  Shader& shader);
 
-			void drawLine(const Vec& p1, const Vec& p2); 
+			void drawLine(const Vec& p1, const Vec& p2,
+						  const Vec3& color = Vec3(1,1,1)); 
+
+			void drawVector(const Vec& position, const Vec& vec,
+							const Real scale = 1.0, 
+							const Vec3& color = Vec3(1,1,1)); 
+
+			void drawBox(const Transform transform,
+						 const Vec3& color = Vec3(1,1,1));
+
+			void drawEllipse(const Transform transform,
+						 	 const Vec3& color = Vec3(1,1,1));
+
+			void drawEllipse(const Vec& position,
+							 const Vec& scale, 
+							 const Vec3& color = Vec3(1,1,1),
+							 const Quaternion& q = Quaternion());
 
 		private:
 			std::stack<DebugObject> m_objects;
+			ResourceManager<Mesh, GeometryLoader> m_geometries;
 	};
 }

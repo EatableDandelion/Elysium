@@ -1,6 +1,6 @@
 #include "Physics/Physics.h"
 
-namespace Elysium
+namespace Physics
 {
 
 	GravityGenerator::GravityGenerator(const Real g):g(g)
@@ -33,11 +33,13 @@ namespace Elysium
 	}
 
 
-	void PhysicsEngine::update(const Real dt, std::vector<Entity>& entities)
+	void PhysicsEngine::update(const Real dt, 
+							   std::vector<Elysium::Entity>& entities,
+							   Elysium::Context& context)
 	{
 		if(dt > 1.0)return;
 
-		for(Entity entity : entities)
+		for(Elysium::Entity entity : entities)
 		{
 			if(entity->hasComponent<PhysicsComponent>())
 			{
@@ -63,7 +65,7 @@ namespace Elysium
 			m_constraintSolver.applyImpulse(dt, joint);
 		}
 
-		for(Entity entity : entities)
+		for(Elysium::Entity entity : entities)
 		{
 			if(entity->hasComponent<PhysicsComponent>())
 			{

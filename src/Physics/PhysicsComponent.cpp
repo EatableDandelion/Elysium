@@ -1,11 +1,11 @@
 #include "Physics/PhysicsComponent.h"
 
-namespace Elysium
+namespace Physics
 {
 	PhysicsComponent::PhysicsComponent(const Real mass, 
 									   const Vec& dimension,
 									   Transform transform)
-	: M_inv(1.0/mass), m_transform(transform)
+	: M_inv(1.0/mass), m_transform(transform), omega(0)
 	{
 		setInertia(dimension);
 	}
@@ -50,7 +50,6 @@ namespace Elysium
 			v(i) = v(i) + loads(i) * dt * M_inv; 
 
 		omega = omega + loads(2) * dt * I_inv;
-			
 		m_transform->translate(v*dt);
 		m_transform->rotate(omega*dt);
 	}

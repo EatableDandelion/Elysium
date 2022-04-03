@@ -1,8 +1,12 @@
 #pragma once
+#include <math.h>
 #include "Circe/Circe.h"
 #include "Physics/PhysicsComponent.h"
+#include "Game/Game.h"
+#include "Rendering/RenderingPass.h"
 
-namespace Elysium
+
+namespace Physics
 {
 	class Joint
 	{
@@ -44,6 +48,11 @@ namespace Elysium
 	{
 		public:
 			void applyImpulse(const Real dt, std::shared_ptr<Joint> joint);
+
+		private:
+			Real t;
+			Mat lambda;
+			bool firstStep = true;
 	};
 
 	class Rod : public Joint
@@ -68,6 +77,37 @@ namespace Elysium
 
 			virtual Mat getC();
 
+		private:
+			Vec n; //normal to axis
+			Vec a; //axis
+	};
+	
+	class Hinge : public Joint
+	{
+		public:
+			/** w is the location of the hinge, between 0 and 1 */
+			Hinge(const std::shared_ptr<PhysicsComponent> component1,
+			 	  const std::shared_ptr<PhysicsComponent> component2,
+				  const Real w = 0.5);
+			
+			virtual Mat getJ();
+
+			virtual Mat getC();
+
+		private:
+			Vec n;
+	};
+	
+	class Collision : public Joint
+	{
+		public:
+			Collision(const std::shared_ptr<PhysicsComponent> component1,
+			 	   	  const std::shared_ptr<PhysicsComponent> component2);
+			
+			virtual Mat getJ();
+
+			virtual Mat getC();
+		
 		private:
 			Vec n;
 	};

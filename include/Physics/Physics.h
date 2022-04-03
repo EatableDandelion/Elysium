@@ -4,9 +4,9 @@
 #include "Physics/PhysicsComponent.h"
 #include "Physics/Constraint.h"
 
-namespace Elysium
+namespace Physics
 {
-
+	
 	class ForceGenerator
 	{
 		public:
@@ -46,11 +46,12 @@ namespace Elysium
 			Real l0;
 			Vec m_anchor;
 	};
-	class PhysicsEngine : public System
+	class PhysicsEngine : public Elysium::System
 	{
 		public:
 			virtual void update(const Real dt,
-								std::vector<Entity>& entities);
+								std::vector<Elysium::Entity>& entities,
+								Elysium::Context& context);
 	
 			void addConstraint(const std::shared_ptr<Joint>& joint);
 

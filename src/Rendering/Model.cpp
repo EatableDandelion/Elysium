@@ -2,6 +2,17 @@
 
 namespace Elysium
 {
+
+	Material::Material()
+	{}
+
+	Material::Material(const Material& other):m_textures(other.m_textures)
+	{
+		for(int i = 0; i<NB_TEXTURE_MAPS; i++)
+			index[i] = other.index[i];
+	}
+
+
 	void Material::bind()
 	{
 		unsigned int unit = 0;
@@ -36,6 +47,7 @@ namespace Elysium
 
 	void Model::draw(Shader& shader)
 	{
+		uploadUniforms(shader);
 		for(TexturedMesh tMesh : m_tMeshes)
 		{
 			tMesh.m_material.bind();
@@ -69,16 +81,6 @@ namespace Elysium
 		processNode(scene->mRootNode, scene, model.m_tMeshes, dir);
 
 		return model;
-	}
-
-	RenderingComponent::RenderingComponent(const Model& model)
-		:m_model(model)
-	{}
-
-	void RenderingComponent::draw(Shader& shader)
-	{
-		uploadUniforms(shader);
-		m_model.draw(shader);
 	}
 
 

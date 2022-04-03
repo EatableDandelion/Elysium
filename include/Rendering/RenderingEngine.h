@@ -12,7 +12,6 @@
 #include "Rendering/RenderingPass.h"
 #include "Game/Input.h"
 #include "Game/Event.h"
-#include "Game/ECS.h"
 
 namespace Elysium
 {
@@ -58,8 +57,7 @@ namespace Elysium
 			virtual void init(Renderer& renderer);
 
 			/** Draw this pass, calls child pass */
-			virtual void draw(std::vector<Entity>& entities,
-							  Renderer& renderer);
+			virtual void draw(Renderer& renderer);
 
 			template<typename Pass, typename... Args>
 			void newPass(Args&&... as)
@@ -70,11 +68,11 @@ namespace Elysium
 	
 		protected:		
 			std::shared_ptr<RenderingNode> m_next;
+			std::shared_ptr<RenderingPass> m_pass;
+			Shader m_shader;
 
 		private:
 			PassID m_id;
-			Shader m_shader;
-			std::shared_ptr<RenderingPass> m_pass;
 
 			PassID getID() const;
 	};
@@ -88,9 +86,20 @@ namespace Elysium
 			RenderingEngine(const RenderingEngine&)=delete;
 			RenderingEngine& operator=(const RenderingEngine&)=delete;
 
+			template<typename Pass, typename... Args>
+			void setFirstPass(const Shader& shader, Args&&... args)
+			{
+				m_shader = shader;
+				newPass<Pass>(std::forward<Args>(args)...);
+			}
+
 			void init();
 
-			void draw(std::vector<Entity>& entities);
+			/** Draw a single model in geometry pass*/
+			void draw(Model& model, const Transform transform);
+
+			/** Draw complete graphic pipeline*/
+			void draw();
 
 			Camera& getCamera();
 
@@ -98,11 +107,12 @@ namespace Elysium
 	
 			bool isClosed() const;
 
+
 		private:
 			bool m_terminate = false;
 			bool m_wasInit = false;
+			bool m_shaderBound = false;
 			Display m_display;
 			Renderer m_renderer;
 	};
-
 }	

@@ -9,6 +9,7 @@ namespace Elysium
 {
 	typedef int EntityID;
 
+	class Context;
 	class EntityData;
 	using Entity = std::shared_ptr<EntityData>;
 
@@ -33,6 +34,8 @@ namespace Elysium
 			~EntityData();
 
 			EntityData(const EntityData&) = delete;
+
+			void update(Entity& entity, const Real dt);
 
 			template<class T, typename... Args>
 			void addComponent(Args&&... args)
@@ -83,6 +86,7 @@ namespace Elysium
 	{
 		public:
 			virtual void update(const Real dt, 
-								std::vector<Entity>& entities) = 0;
+								std::vector<Entity>& entities,
+								Context& context) = 0;
 	};
 }

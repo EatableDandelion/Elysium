@@ -1,6 +1,6 @@
 #include "Physics/Constraint.h"
 
-namespace Elysium
+namespace Physics
 {
 	Joint::Joint(const std::shared_ptr<PhysicsComponent> component1,
 				 const std::shared_ptr<PhysicsComponent> component2):
@@ -72,7 +72,7 @@ namespace Elysium
 		component1->update(dt, Vec3(-F(0),-F(1),-F(2)-dt*moment));
 		
 		Vec r2 = getR2();
-		moment = r2(0)*F(1)-r2(1)*F(0);		
+		moment = r2(0)*F(1)-r2(1)*F(0);	
 		component2->update(dt, Vec3(F(0),F(1),F(2)+dt*moment));
 	}
 
@@ -83,8 +83,20 @@ namespace Elysium
 		Mat v = joint->getV();
 		Mat K = joint->getK(J);
 		Mat b = joint->getC()/dt;
+	/*	Mat motor(b.getNbRows(), 1);
+		motor(2) = 1.0*cos(0.05*t);
+		b = b + motor;
+	*/	t += dt;
+		Mat lambdaNew = (J*v+b)/K; 
 
-		Mat lambda = (J*v+b)/K; 
+		if(firstStep)
+		{
+			firstStep = false;
+			lambda = lambdaNew;
+		}
+
+		Real w = 0.9;
+		lambda = lambdaNew*w + lambda*(1.0-w);
 
 		joint->update(dt, J, lambda);
 	}
@@ -140,13 +152,14 @@ namespace Elysium
 			 const std::shared_ptr<PhysicsComponent> component2)
 			:Joint(component1,component2)
 	{
-		setAnchor1(component1->getPosition());
+		setAnchor1(component2->getPosition());
 		setAnchor2(component1->getPosition());
 		Vec axis = component2->getPosition()-component1->getPosition();
 		axis = normalize(axis);
 		axis = component1->getTransform()->toLocal(axis,false);
 		n(0) = axis(1);
 		n(1) =-axis(0);
+		a = axis;
 	}
 
 	Mat Slider::getJ()
@@ -158,6 +171,7 @@ namespace Elysium
 							   - component1->getPosition());
 
 		Vec2 n1 = component1->getTransform()->toGlobal(n,false);
+		Vec2 a1 = component1->getTransform()->toGlobal(a,false);
 
 		Mat J(2, 6);
 		J(0,0) = -n1(0);
@@ -169,6 +183,11 @@ namespace Elysium
 		J(0,4) = n1(1);
 		J(0,5) = Circe::cross(r2, n1);
 		J(1,5) = 1.0;
+
+	//	J(2,0) = a1(0);
+	//	J(2,1) = a1(1);
+	//	J(2,3) =-a1(0);
+	//	J(2,4) =-a1(1);
 
 		return J;
 	}
@@ -186,6 +205,109 @@ namespace Elysium
 		double angle = component1->getTransform()->
 					angleWith(*(component2->getTransform()));
 
-		return Mat(2,1, {dot(C,n1)*(0.01),angle*0});
+		Real limit = 20.0*3.141593/180.0;
+		angle = std::max(-limit, std::min(limit, angle));
+
+		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()
+					->drawVector(component1->getPosition(), r1);	
+
+		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()
+					->drawVector(component2->getPosition(), r2);	
+
+		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()
+					->drawLine(component1->getPosition(), 
+							   component2->getPosition(),
+							   Vec3(0,1,1));	
+
+		return Mat(2, 1, {std::max(-10.0,std::min(10.0,dot(C,n1)*0.15)), 
+						  std::max(-10.0,std::min(10.0,angle*0.15))});
+	}
+
+	Hinge::Hinge(const std::shared_ptr<PhysicsComponent> component1,
+			 	 const std::shared_ptr<PhysicsComponent> component2,
+				 const Real w)
+			:Joint(component1,component2)
+	{
+		Vec p = ((1.0-w)*component1->getPosition()
+				+w*component2->getPosition());
+		setAnchor1(p);
+		setAnchor2(p);
+	}
+
+	Mat Hinge::getJ()
+	{
+		Vec r1 = getR1();
+		Vec r2 = getR2();
+
+		Mat J(3, 6);
+
+		J(0,0) = -1.0;
+		J(1,1) = -1.0;
+		J(0,2) = r1(1);
+		J(1,2) = -r1(0);
+
+		J(0,3) = 1.0;
+		J(1,4) = 1.0;
+		J(0,5) = -r2(1);
+		J(1,5) = r2(0);
+
+		J(2,2) = -1.0;
+		J(2,5) = 1.0;
+
+		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()
+					->drawVector(component1->getPosition(), r1);	
+
+		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()
+					->drawVector(component2->getPosition(), r2);	
+
+		return J;
+	}
+
+	Mat Hinge::getC()
+	{
+		Vec r1 = getR1();
+		Vec r2 = getR2();
+
+		Vec C = component2->getPosition() + r2 
+			  - component1->getPosition() - r1;
+
+		return Mat(3,1, {C(0),C(1),0})*0.3;
+	}
+	
+	Collision::Collision(const std::shared_ptr<PhysicsComponent> component1,
+			 			 const std::shared_ptr<PhysicsComponent> component2)
+			:Joint(component1, component2)
+	{
+		setAnchor1(component1->getPosition()+Vec(1,0));
+		setAnchor2(component1->getPosition()-Vec(1,0));
+	}
+			
+	Mat Collision::getJ()
+	{
+		Vec r1 = getR1();
+		Vec r2 = getR2();
+
+//		Vec u = Circe::normalize(component2->getPosition() 
+//							   - component1->getPosition());
+
+		Vec2 n1 = component1->getTransform()->toGlobal(n,false);
+
+		Mat J(2, 6);
+		J(0,0) = -n1(0);
+		J(0,1) = -n1(1);
+		J(0,2) = -Circe::cross(r1, n1);
+		J(1,2) = -1.0;
+
+		J(0,3) = n1(0);
+		J(0,4) = n1(1);
+		J(0,5) = Circe::cross(r2, n1);
+		J(1,5) = 1.0;
+
+		return J;
+	}
+
+	Mat Collision::getC()
+	{
+		return Mat(2,1);
 	}
 }

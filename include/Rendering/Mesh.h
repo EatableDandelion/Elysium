@@ -5,6 +5,7 @@
 #include <map>
 #include <iostream>
 #include <string>
+#include <math.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -98,9 +99,13 @@ namespace Elysium
 
 			void addGeometry(const std::string& name, const MeshData& data);
 
-			MeshData newRectangle() const;
+			MeshData newRectangle(const bool& wire) const;
 
 			MeshData newLine() const;
+
+			MeshData newArrow() const;
+
+			MeshData newCircle() const;
 
 		private:
 			map<std::string, MeshData> m_meshes;

@@ -292,7 +292,10 @@ namespace Elysium
 	GeometryLoader::GeometryLoader()
 	{
 		addGeometry("line", newLine());
-		addGeometry("rectangle", newRectangle());
+		addGeometry("arrow", newArrow());
+		addGeometry("sprite", newRectangle(false));
+		addGeometry("rectangle", newRectangle(true));
+		addGeometry("circle", newCircle());
 	}
 
 	Mesh GeometryLoader::load(const std::string& fileName)
@@ -311,25 +314,38 @@ namespace Elysium
 		m_meshes.insert(std::pair<std::string, MeshData>(name, data));
 	}
 
-	MeshData GeometryLoader::newRectangle() const
+	MeshData GeometryLoader::newRectangle(const bool& wire) const
 	{
-		float w = 0.5f;
-		float h = 0.5f;
+		float w = 1.0f;
+		float h = 1.0f;
 
 		MeshData data;
 
-		data.vertices.push_back(Vertex(-w,-h,0, 0,0, 0,0,1));	
-		data.vertices.push_back(Vertex( w,-h,0, 1,0, 0,0,1));	
-		data.vertices.push_back(Vertex( w, h,0, 1,1, 0,0,1));	
-		data.vertices.push_back(Vertex(-w, h,0, 0,1, 0,0,1));
+		data.vertices.push_back(Vertex(-w,-h,0, 0,0, 0,0,-1));	
+		data.vertices.push_back(Vertex( w,-h,0, 1,0, 0,0,-1));	
+		data.vertices.push_back(Vertex( w, h,0, 1,1, 0,0,-1));	
+		data.vertices.push_back(Vertex(-w, h,0, 0,1, 0,0,-1));
 
-		data.indices.push_back(4);
-		data.indices.push_back(3);
-		data.indices.push_back(2);
-		data.indices.push_back(1);
-		//Mesh mesh = m_meshLoader.createMesh(data);
-
-//		if(!fill) mesh.setRenderingType(MeshType::WIRE_RENDERING);
+		if(wire)
+		{
+			data.indices.push_back(0);
+			data.indices.push_back(1);
+			data.indices.push_back(1);
+			data.indices.push_back(2);
+			data.indices.push_back(2);
+			data.indices.push_back(3);
+			data.indices.push_back(3);
+			data.indices.push_back(0);
+		}
+		else
+		{
+			data.indices.push_back(3);
+			data.indices.push_back(2);
+			data.indices.push_back(1);
+			data.indices.push_back(3);
+			data.indices.push_back(1);
+			data.indices.push_back(0);
+		}
 
 		return data;
 	}
@@ -338,17 +354,57 @@ namespace Elysium
 	{
 		MeshData data;
 
-		data.vertices.push_back(Vertex(-0.5,0.0,0.0, 0));	
+		data.vertices.push_back(Vertex(-0.5,0.0,0.0, 1));	
 		data.vertices.push_back(Vertex( 0.5,0.0,0.0, 1));	
 
+		data.indices.push_back(0);
 		data.indices.push_back(1);
-		data.indices.push_back(2);
-
-//		Mesh mesh = m_meshLoader.createMesh(data);
-//		mesh.setRenderingType(MeshType::WIRE_RENDERING);
-//		glLineWidth(lineThickness);
 
 		return data;
+	}
+	
+	MeshData GeometryLoader::newArrow() const
+	{
+		MeshData data;
+
+		data.vertices.push_back(Vertex(-0.5, 0.0,0.0, 1));	
+		data.vertices.push_back(Vertex( 0.5, 0.0,0.0, 1));	
+		data.vertices.push_back(Vertex( 0.4, 0.1,0.0, 1));	
+		data.vertices.push_back(Vertex( 0.4,-0.1,0.0, 1));	
+
+		data.indices.push_back(0);
+		data.indices.push_back(1);
+		data.indices.push_back(1);
+		data.indices.push_back(2);
+		data.indices.push_back(1);
+		data.indices.push_back(3);
+
+		return data;
+	}
+	
+	MeshData GeometryLoader::newCircle() const
+	{
+		MeshData data;
+		int n = 21;
+		Real theta = 0.0;
+
+		for(int i = 0; i < n; i++)
+		{
+			data.vertices.push_back(Vertex(cos(theta),sin(theta),0.0,1));
+			theta += 2.0*3.141593/n;
+
+			data.indices.push_back(i);
+			if(i == n-1)
+			{
+				data.indices.push_back(0);
+			}
+			else
+			{
+				data.indices.push_back(i+1);
+			}
+		}
+
+		return data;	
 	}
 }
 

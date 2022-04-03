@@ -3,89 +3,100 @@
 /** Game loop from https://gameprogrammingpatterns.com/game-loop.html */
 namespace Elysium
 {
-	Game::Game(const std::string& name, const int width, const int height)
-				:m_renderingEngine(name, width, height, 3)
-	{}
+	ResourceManager<Mesh, GeometryLoader> Context::m_geometries;
 
-	void Game::init()
+	Context::Context()
 	{
-		init(m_renderingEngine);
+		m_input = std::make_shared<Input>();
 	}
 
-	void Game::update(const Real dt)
-	{
-		update(dt, entities);
-		for(std::shared_ptr<System> system : systems)
-		{
-			system->update(dt, entities);
-		}
-	}
-
-	void Game::draw()
-	{
-		m_renderingEngine.draw(entities);
-	}
-
-	std::shared_ptr<Input> Game::getInput()
-	{
-		return m_input;
-	}
-
-	void Game::pollInput()
-	{
-		m_input->poll();
-	}
-
-	bool Game::isTerminated() const
-	{
-		return m_input->isTerminated();
-	}
-
-	Shader Game::newShader(const std::string& name)
+	Shader Context::newShader(const std::string& name)
 	{
 		return m_shaders.getResource(name); 
 	}
-
-	Mesh Game::newMesh(const std::string& name)
-	{
-		return m_meshes.getResource(name); 
-	}
 	
-	Mesh Game::newGeometry(const std::string& name)
+	Mesh Context::NewMesh(const std::string& name)
 	{
 		return m_geometries.getResource(name);
 	}
 
-	Texture Game::newTexture(const std::string& name)
+	Texture Context::newTexture(const std::string& name)
 	{
 		return m_textures.getResource(name); 
 	}
 
-	Model Game::newModel(const std::string& name)
+	Model Context::newModel(const std::string& name)
 	{
 		return m_models.getResource(name); 
 	}
-			
+		
+	std::shared_ptr<Input> Context::getInput()
+	{
+		return m_input;
+	}	
+
+
+	void Context::setShadersDirectory(const std::string& name)
+	{
+		m_shaders.setFolderLocation(name);
+	}
+
+	void Context::setModelsDirectory(const std::string& name)
+	{
+		m_models.setFolderLocation(name);
+	}
+	
+	void Context::setTexturesDirectory(const std::string& name)
+	{
+		m_textures.setFolderLocation(name);
+	}
+	
+	std::shared_ptr<RenderingEngine> Game::m_rendering;
+
+	void Game::update(const Real dt, Context& context)
+	{
+		for(Entity entity : m_entities)
+			entity->update(entity, dt);
+
+		update(dt, m_entities, context);
+		for(std::shared_ptr<System> system : m_systems)
+		{
+			system->update(dt, m_entities, context);
+		}
+	}
+
+	/*	
 	Entity Game::newSprite(const std::string& name)
 	{		
 		Entity sprite = newEntity();
 			
 		sprite->addComponent<RenderingComponent>(
-						Model(newMesh("plane3.obj"), newTexture(name)));
+						Model(Game::NewMesh("plane3.obj"), 
+							  Game::NewTexture(name)));
 
 		return sprite;
-	}
+	}*/
 
 	Entity Game::newEntity()
 	{
 		Entity entity = std::make_shared<EntityData>();
-		entities.push_back(entity);
+		m_entities.push_back(entity);
 		return entity;
 	}
-	
+
+	void Game::SetRenderer(const std::shared_ptr<RenderingEngine> renderer)
+	{
+		m_rendering = renderer;
+	}
+
+	std::shared_ptr<RenderingEngine> Game::Renderer()
+	{
+		return m_rendering;
+	}
+
 	void Game::addSystem(const std::shared_ptr<System> system)
 	{
-		systems.push_back(system);
+		m_systems.push_back(system);
 	}
 
 	namespace Time
@@ -98,8 +109,7 @@ namespace Elysium
 	GameLoop::GameLoop(const std::shared_ptr<Game> game)
 						:m_running(false),
 						 m_game(game)
-	{
-	}
+	{}
 
 	void GameLoop::start()
 	{
@@ -109,15 +119,14 @@ namespace Elysium
 
 	void GameLoop::run()
 	{
-		m_game->init();
+		m_game->init(m_context);
 
 		double SEC_PER_FRAME = 1.0/60.0;
 		m_running = true;
 		Time::time_point current, previous, sysCurrent, sysPrevious;
 		double lag = 0.0;
 		previous = Time::clock::now();
-
-		while(!m_game->isTerminated())
+		while(!m_context.getInput()->isTerminated())
 		{	
 
 			current = Time::clock::now();
@@ -132,20 +141,20 @@ namespace Elysium
 			std::cout << "\r" << "Execution time: " << elapsed 
 					  << " s           " 			<< std::flush;
 		
-			m_game->pollInput();
-				
+			m_context.getInput()->poll();
+
 			while(lag >= SEC_PER_FRAME)
 			{
 				sysCurrent = Time::clock::now();
 				elapsed = Time::duration(sysCurrent - sysPrevious).count();
 				sysPrevious = sysCurrent;
 
-				m_game->update(elapsed);
+				m_game->update(elapsed, m_context);
 
 				lag -= SEC_PER_FRAME;
 			}
 
-			m_game->draw();	
+			Game::Renderer()->draw();	
 		}		
 		m_running = false;
 	}

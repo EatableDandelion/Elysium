@@ -19,6 +19,10 @@ namespace Elysium
 	class Material
 	{
 		public:
+			Material();
+
+			Material(const Material& other);
+
 			void bind();
 
 			void addTexture(const Texture_Map& map, 
@@ -35,7 +39,7 @@ namespace Elysium
 		Material m_material;
 	};
 
-	class Model
+	class Model : public UniformMap
 	{
 		public:
 			Model();
@@ -54,16 +58,6 @@ namespace Elysium
 			friend class ModelLoader;
 	};
 
-	class RenderingComponent : public Component, public UniformMap
-	{
-		public:
-			RenderingComponent(const Model& model);
-
-			void draw(Shader& shader);
-
-		private:
-			Model m_model;
-	};
 
 	class ModelLoader
 	{

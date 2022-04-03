@@ -17,6 +17,7 @@ namespace Elysium
 		
 		glBlendEquation(GL_FUNC_ADD);
 		glBlendFunc(GL_ONE, GL_ONE);
+		glLineWidth(3);
 	}
 	
 	Camera& Renderer::getCamera()
@@ -93,41 +94,51 @@ namespace Elysium
 	void GeometryPass::init(Renderer& renderer, Shader& shader)
 	{}
 
-	void GeometryPass::draw(std::vector<Entity>& entities,
-							Renderer& renderer, Shader& shader)
+	void GeometryPass::startDraw(Renderer& renderer)
 	{
 		renderer.disable(Renderer::BLEND);
 		renderer.enable(Renderer::FRAMEBUFFER);
 		renderer.enable(Renderer::DEPTH_WRITE | Renderer::DEPTH_READ);
 		renderer.clear(0.0f);
-
-		for(Entity entity : entities)
+	}
+	
+	void GeometryPass::draw(Model& model,		
+					  		const Transform transform, 
+							Renderer& renderer,
+							Shader& shader)
+	{
+		if(!wasInit)
 		{
-			if(entity->hasComponent<RenderingComponent>())
-			{
-				std::shared_ptr<RenderingComponent> model = 
-							entity->getComponent<RenderingComponent>();
-
-				Mat mvp = renderer.getCamera().getViewProjection() 
-							*(entity->getTransform()->getTransformMatrix());
-
-				model->setUniform("MVP", mvp);
-
-				model->draw(shader);
-			}
+			wasInit = true;
+			startDraw(renderer);
 		}
 
+		Mat mvp = renderer.getCamera().getViewProjection() 
+						*(transform->getTransformMatrix());
+
+		model.setUniform("MVP", mvp);
+
+		model.draw(shader);
+	}
+
+	void GeometryPass::draw(Renderer& renderer, Shader& shader)
+	{
 		renderer.enable(Renderer::BLEND);
 		renderer.disable(Renderer::FRAMEBUFFER);
 		renderer.clear(0.0f, true, false, false);
 		renderer.applyDepthBuffer();
+		wasInit = false;
 	}
-	
+
+
+	DebugObject::DebugObject():
+			m_transform(std::make_shared<Circe::Trans<DIMENSION>>())
+	{}
+
 	void DebugPass::init(Renderer& renderer, Shader& shader)
 	{}
 
-	void DebugPass::draw(std::vector<Entity>& entities,
-							Renderer& renderer, Shader& shader)
+	void DebugPass::draw(Renderer& renderer, Shader& shader)
 	{
 		renderer.disable(Renderer::DEPTH_WRITE | Renderer::DEPTH_READ);
 
@@ -139,32 +150,64 @@ namespace Elysium
 						*(object.m_transform->getTransformMatrix());
 
 			shader.updateUniform("MVP", mvp);
+			shader.updateUniform("lineColor", object.m_color);
 			object.m_mesh.setRenderingType(MeshType::WIRE_RENDERING);
 			object.m_mesh.draw();
 			m_objects.pop();
 		}
-
-		/*for(Entity entity : entities)
-		{
-			if(entity->hasComponent<RenderingComponent>())
-			{
-				std::shared_ptr<RenderingComponent> model = 
-							entity->getComponent<RenderingComponent>();
-
-				Mat mvp = renderer.getCamera().getViewProjection() 
-							*(entity->getTransform()->getTransformMatrix());
-
-				model->setUniform("MVP", mvp);
-
-				model->draw(shader);
-			}
-		}*/
 	}
 			
-	void DebugPass::drawLine(const Vec& p1, const Vec& p2)
+	void DebugPass::drawLine(const Vec& p1, const Vec& p2, 
+							 const Vec3& color)
 	{
 		DebugObject line;
 		line.m_transform->lineUp(p1,p2);
+		line.m_mesh = m_geometries.getResource("line");
+		line.m_color = color;
 		m_objects.push(line);
 	}
+	
+	void DebugPass::drawVector(const Vec& position, const Vec& vec, 
+							   const Real scale, const Vec3& color)
+	{
+		DebugObject line;
+		line.m_transform->lineUp(position, position+vec*scale);
+		line.m_mesh = m_geometries.getResource("arrow");
+		line.m_color = color;
+		m_objects.push(line);
+	}
+
+	void DebugPass::drawBox(const Transform transform, 
+							const Vec3& color)
+	{	
+		DebugObject box;
+		box.m_transform->translate(transform->getPosition());
+		box.m_transform->setRotation(transform->getRotation());
+		box.m_transform->setScale(transform->getScale());
+		box.m_mesh = m_geometries.getResource("rectangle");
+		box.m_color = color;
+		m_objects.push(box);
+	}
+	
+	void DebugPass::drawEllipse(const Transform transform, 
+								const Vec3& color)
+	{	
+		drawEllipse(transform->getPosition(), 
+					transform->getScale(),
+					color,
+					transform->getRotation());
+	}
+
+	void DebugPass::drawEllipse(const Vec& position, const Vec& scale, 
+							    const Vec3& color, const Quaternion& q)
+	{	
+		DebugObject ellipse;
+		ellipse.m_transform->translate(position);
+		ellipse.m_transform->setRotation(q);
+		ellipse.m_transform->setScale(scale);
+		ellipse.m_mesh = m_geometries.getResource("circle");
+		ellipse.m_color = color;
+		m_objects.push(ellipse);
+	}
+
 }

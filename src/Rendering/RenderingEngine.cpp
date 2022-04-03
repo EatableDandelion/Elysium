@@ -13,22 +13,19 @@ namespace Elysium
 	void RenderingNode::init(Renderer& renderer)
 	{
 		m_shader.bind();
-//		m_pass->init(renderer);
 		m_pass->init(renderer, m_shader);
 
 		if(m_next != nullptr)
 			m_next->init(renderer);
 	}
 
-	void RenderingNode::draw(std::vector<Entity>& entities,
-							 Renderer& renderer)
+	void RenderingNode::draw(Renderer& renderer)
 	{
 		m_shader.bind();
-	//	m_pass->draw(entities, renderer);
-		m_pass->draw(entities, renderer, m_shader);
+		m_pass->draw(renderer, m_shader);
 
 		if(m_next != nullptr)
-			m_next->draw(entities, renderer);
+			m_next->draw(renderer);
 	}
 
 	PassID RenderingNode::getID() const
@@ -44,8 +41,6 @@ namespace Elysium
 					  m_renderer(width, height, nbBuffers)
 	{}
 
-
-
 	void RenderingEngine::init()
 	{
 		m_wasInit = true;
@@ -54,16 +49,26 @@ namespace Elysium
 			m_next->init(m_renderer);
 	}
 
-	void RenderingEngine::draw(std::vector<Entity>& entities)
+	void RenderingEngine::draw(Model& model, const Transform transform)
+	{
+		if(!m_shaderBound)
+		{
+			m_shaderBound = true;
+			m_shader.bind();
+		}
+
+		m_pass->draw(model, transform, m_renderer, m_shader);
+	}
+
+	void RenderingEngine::draw()
 	{
 		if(!m_wasInit)
 		{
 			init();
 		}
 
-		if(m_next != nullptr)
-			m_next->draw(entities, m_renderer);
-
+		RenderingNode::draw(m_renderer);
+		m_shaderBound = false;
 		swapBuffers();
 	}
 

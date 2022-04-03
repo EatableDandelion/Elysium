@@ -679,6 +679,9 @@ namespace Circe
 	struct Mat
 	{	
 		public:
+			Mat()
+			{}
+
 			Mat(const std::size_t newM, const std::size_t newN)
 			{	
 				init(newM, newN);	
@@ -985,6 +988,19 @@ namespace Circe
 		return Vec<3>(a(1)*b(2)-a(2)*b(1),
 					 -a(0)*b(2)+a(2)*b(0),
 					  a(0)*b(1)-a(1)*b(0));
+	}
+
+	static Vec<2> tripleProduct(const Vec<2>& a, const Vec<2>& b,
+								const Vec<2>& c)
+	{
+		Real d = cross(a,b);
+		return Vec<2>(-c(1)*d, c(0)*d);
+	}
+
+	static Vec<3> tripleProduct(const Vec<3>& a, const Vec<3>& b,
+								const Vec<3>& c)
+	{
+		return cross(cross(a,b),c);
 	}
 
 	struct Complex
@@ -1619,6 +1635,11 @@ namespace Circe
 			{
 				return rotation;
 			}		
+
+			inline void setRotation(const Quaternion& other)
+			{
+				rotation = other;
+			}
 
 			inline Vec<N>& getScale()
 			{

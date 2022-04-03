@@ -90,8 +90,7 @@ namespace Elysium
 		shader.updateUniform("gDiffuse", Texture_Map::DIFFUSE);
 	}
 
-	void DirectionalLightPass::draw(std::vector<Entity>& entities,
-					  	 Renderer& renderer, Shader& shader)
+	void DirectionalLightPass::draw(Renderer& renderer, Shader& shader)
 	{
 		
 		renderer.disable(Renderer::DEPTH_WRITE);
@@ -104,23 +103,23 @@ namespace Elysium
 		shader.updateUniform("screenSize", 
 							 renderer.getScreenSize());
 
-		for(Entity entity : entities)
+		for(DirectionalLight light : m_lights)
 		{
-			if(entity->hasComponent<DirectionalLight>())
-			{
-				std::shared_ptr<DirectionalLight> light = 
-								entity->getComponent<DirectionalLight>();
-				light->updateShader(shader, renderer.getCamera()
-													 .getViewProjection());
+			light.updateShader(shader, renderer.getCamera()
+												.getViewProjection());
 
-				m_mesh.draw();
-			}
+			m_mesh.draw();
 		}
 
 		renderer.disable(Renderer::DEPTH_READ);
 		renderer.enable(Renderer::FACE_CULLING);
 	}	
 	
+	void DirectionalLightPass::addLight(const DirectionalLight& light)
+	{
+		m_lights.push_back(light);
+	}
+
 	PointLightPass::PointLightPass(const Mesh& mesh)
 		: m_mesh(mesh)	
 	{}
@@ -132,8 +131,7 @@ namespace Elysium
 		shader.updateUniform("gDiffuse", Texture_Map::DIFFUSE);
 	}
 
-	void PointLightPass::draw(std::vector<Entity>& entities,
-					  	 	  Renderer& renderer, Shader& shader)
+	void PointLightPass::draw(Renderer& renderer, Shader& shader)
 	{
 		renderer.disable(Renderer::DEPTH_WRITE);
 		renderer.enable(Renderer::DEPTH_READ);
@@ -145,24 +143,24 @@ namespace Elysium
 		shader.updateUniform("screenSize", 
 							 renderer.getScreenSize());
 
-		for(Entity entity : entities)
+		for(PointLight light : m_lights)
 		{
-			if(entity->hasComponent<PointLight>())
-			{
-				std::shared_ptr<PointLight> light = 
-								entity->getComponent<PointLight>();
+			light.updateShader(shader, renderer.getCamera()
+												.getViewProjection());
 
-				light->updateShader(shader, renderer.getCamera()
-													 .getViewProjection());
-
-				m_mesh.draw();
-			}
+			m_mesh.draw();
 		}
 
 		renderer.disable(Renderer::DEPTH_READ);
 		renderer.enable(Renderer::FACE_CULLING);
 	}
 	
+	void PointLightPass::addLight(const PointLight& light)
+	{
+		m_lights.push_back(light);
+	}
+
+
 	AmbientPass::AmbientPass(const Mesh& screen, 
 							 const Real intensity) 
 		: m_screen(screen), m_intensity(intensity)
@@ -173,8 +171,7 @@ namespace Elysium
 		shader.updateUniform("gDiffuse", Texture_Map::DIFFUSE);
 	}
 
-	void AmbientPass::draw(std::vector<Entity>& entities,
-						   Renderer& renderer, Shader& shader)
+	void AmbientPass::draw(Renderer& renderer, Shader& shader)
 	{
 		shader.updateUniform("ambient", m_intensity);
 		renderer.disable(Renderer::DEPTH_WRITE | Renderer::DEPTH_READ);

@@ -119,7 +119,6 @@ namespace Elysium
 				}
 				continue;
 			}
-
 			if(type == "float")
 					glUniform1f(location, value[0]);
 			else if(type == "vec2")
