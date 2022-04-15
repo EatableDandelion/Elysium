@@ -11,7 +11,8 @@ namespace Physics
 	{
 		public:
 			PhysicsComponent(const Real mass, const Vec& dimension,
-							 Transform transform);	
+							 Transform transforms,
+							 std::vector<Vec>& collisionPoints);	
 
 			void addForce(const Vec& f);
 
@@ -47,6 +48,8 @@ namespace Physics
 
 			Transform getTransform() const;
 
+			Collider getCollider() const;
+
 		private:
 			Vec v;
 			Real omega;
@@ -54,7 +57,7 @@ namespace Physics
 			Real M_inv;			
 			Real I_inv;
 			
-			Shape m_collider;
+			Collider m_collider;
 
 			Transform m_transform;
 			std::vector<std::shared_ptr<ForceGenerator>> m_forces;

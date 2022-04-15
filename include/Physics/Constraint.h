@@ -3,7 +3,6 @@
 #include "Circe/Circe.h"
 #include "Physics/PhysicsComponent.h"
 #include "Game/Game.h"
-#include "Rendering/RenderingPass.h"
 
 
 namespace Physics
@@ -17,6 +16,12 @@ namespace Physics
 			virtual Mat getJ() = 0;
 
 			virtual Mat getC() = 0;
+
+			/**
+			    Use this handle to impose inequality or
+			 	load limits
+			**/
+			virtual void restrictLambda(Mat& lambda);
 
 			Mat getV();
 
@@ -41,7 +46,6 @@ namespace Physics
 //		private:	
 			Vec anchor1;
 			Vec anchor2;
-			Real angle0;
 	};
 
 	class ConstraintSolver
@@ -51,7 +55,7 @@ namespace Physics
 
 		private:
 			Real t;
-			Mat lambda;
+			//Mat lambda;
 			bool firstStep = true;
 	};
 
@@ -65,6 +69,8 @@ namespace Physics
 
 			virtual Mat getC();
 
+		private:
+			Real angle0;
 	};
 	
 	class Slider : public Joint
@@ -102,12 +108,15 @@ namespace Physics
 	{
 		public:
 			Collision(const std::shared_ptr<PhysicsComponent> component1,
-			 	   	  const std::shared_ptr<PhysicsComponent> component2);
+			 	   	  const std::shared_ptr<PhysicsComponent> component2,
+					  const Vec& r1, const Vec& r2);
 			
 			virtual Mat getJ();
 
 			virtual Mat getC();
 		
+			virtual void restrictLambda(Mat& lambda);
+
 		private:
 			Vec n;
 	};

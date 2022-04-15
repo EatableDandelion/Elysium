@@ -10,7 +10,6 @@
 #include "Rendering/Mesh.h"
 #include "Rendering/Texture.h"
 #include "Rendering/Shader.h"
-#include "Game/ECS.h"
 
 //Source for model: https://learnopengl.com/Model-Loading/Model
 
@@ -39,7 +38,7 @@ namespace Elysium
 		Material m_material;
 	};
 
-	class Model : public UniformMap
+	class Model
 	{
 		public:
 			Model();
@@ -52,7 +51,14 @@ namespace Elysium
 
 			void addMesh(const Mesh& mesh);
 
+			template<typename T>
+			void setVariable(const std::string& name, const T& value)
+			{
+				m_register.setVariable(name, value);
+			}
+
 		private:
+			Register m_register;
 			std::vector<TexturedMesh> m_tMeshes;
 
 			friend class ModelLoader;

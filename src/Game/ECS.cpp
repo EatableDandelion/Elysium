@@ -5,6 +5,9 @@ namespace Elysium
 	void Component::update(Entity& entity, const Real dt)
 	{}
 
+	void Component::draw(Entity& entity, std::shared_ptr<Renderer> renderer)
+	{}
+
 	EntityID EntityData::allid=0;
 	
 	EntityData::EntityData()
@@ -30,12 +33,25 @@ namespace Elysium
 		return m_id;
 	}
 
-	void EntityData::update(Entity& entity, const Real dt)
+	void EntityData::update(Entity& entity, 
+							std::shared_ptr<Renderer> renderer, 
+							const Real dt)
 	{
 		for(auto component : m_components)
 		{
 			component.second->update(entity, dt);
+			component.second->draw(entity, renderer);
 		}
+	}
+
+	std::vector<Real> EntityData::getVariable(const std::string& name)
+	{
+		return m_register.getVariable(name);
+	}
+
+	bool EntityData::hasVariable(const std::string& name) const
+	{
+		return m_register.hasVariable(name);
 	}
 
 	EntityID EntityData::getID() const

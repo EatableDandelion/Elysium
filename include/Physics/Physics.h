@@ -1,8 +1,10 @@
 #pragma once
 #include "Game/ECS.h"
+#include "Game/World.h"
 #include "Circe/Circe.h"
 #include "Physics/PhysicsComponent.h"
 #include "Physics/Constraint.h"
+#include "Physics/CollisionDetection.h"
 
 namespace Physics
 {
@@ -50,13 +52,15 @@ namespace Physics
 	{
 		public:
 			virtual void update(const Real dt,
-								std::vector<Elysium::Entity>& entities,
+								Elysium::World& world,
 								Elysium::Context& context);
 	
 			void addConstraint(const std::shared_ptr<Joint>& joint);
 
 		private:
 			std::vector<std::shared_ptr<Joint>> m_joints;
+			std::stack<std::shared_ptr<Joint>> m_contacts;
 			ConstraintSolver m_constraintSolver;
+			CollisionDetector m_detector;
 	};
 }

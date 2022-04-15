@@ -245,6 +245,16 @@ namespace Circe
 				}
 			}
 			
+			Vec(const std::vector<Real>& values)
+			{
+				size_t i = 0;
+				for(Real f : values)
+				{
+					data[i]=f;
+					i++;
+				}
+			}
+
 			//Copy constructor
 			Vec(const Vec<N>& v)
 			{
@@ -409,7 +419,10 @@ namespace Circe
 		
 			Vec(const Real& x, const Real& y):x(x), y(y)
 			{}
-			
+	
+			Vec(const std::vector<Real>& v):x(v[0]), y(v[1])
+			{}		
+
 			//Copy constructor
 			Vec(const Vec<2>& v):x(v.x), y(v.y)
 			{}
@@ -539,7 +552,10 @@ namespace Circe
 			Vec(const Real& x, const Real& y, const Real& z)
 				:x(x), y(y), z(z)
 			{}
-			
+	
+			Vec(const std::vector<Real>& v):x(v[0]), y(v[1]), z(v[2])
+			{}				
+
 			//Copy constructor
 			Vec(const Vec<3>& v):x(v.x), y(v.y), z(v.z)
 			{}

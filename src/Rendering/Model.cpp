@@ -47,7 +47,7 @@ namespace Elysium
 
 	void Model::draw(Shader& shader)
 	{
-		uploadUniforms(shader);
+		shader.updateUniforms(m_register);
 		for(TexturedMesh tMesh : m_tMeshes)
 		{
 			tMesh.m_material.bind();

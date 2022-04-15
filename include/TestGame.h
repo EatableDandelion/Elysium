@@ -1,6 +1,10 @@
 #pragma once
 #include <iostream>
+#include <ctime>
+#include <cstdlib>
 #include <Circe/Circe.h>
+#include <Circe/BVH.h>
+#include "Game/GameLoop.h"
 #include "Rendering/Display.h"
 #include "Rendering/Shader.h"
 #include "Rendering/Mesh.h"
@@ -22,17 +26,15 @@
 
 using namespace Elysium;
 
+
 class TestGame : public Elysium::Game
 {
 	public:
-		virtual void init(Context& context);
+		virtual void init(World& world, Context& context);
 
-		virtual void update(const Real dt, std::vector<Entity>& entities,
-							Context& context);
+		virtual void update(const Real dt, World& world, Context& context);
 
 	private:
 		std::shared_ptr<Mover> mover;
 		Entity sprite1, sprite2, sprite3;
-		Physics::Shape s1, s2;
-		Physics::Simplex simplex;
 };

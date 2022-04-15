@@ -54,10 +54,10 @@ namespace Elysium
 			}
 
 			/** Init this pass, calls child pass */
-			virtual void init(Renderer& renderer);
+			virtual void init(RenderContext& renderer);
 
 			/** Draw this pass, calls child pass */
-			virtual void draw(Renderer& renderer);
+			virtual void draw(RenderContext& renderer);
 
 			template<typename Pass, typename... Args>
 			void newPass(Args&&... as)
@@ -77,14 +77,15 @@ namespace Elysium
 			PassID getID() const;
 	};
 
-	class RenderingEngine : public RenderingNode 
+	class Renderer : public RenderingNode 
 	{
 		public:
-			RenderingEngine(const std::string& name, const int width,
-							const int height, const int nbBuffers);
+			Renderer(const std::string& name, const int width,
+					 const int height, const int nbBuffers);
 
-			RenderingEngine(const RenderingEngine&)=delete;
-			RenderingEngine& operator=(const RenderingEngine&)=delete;
+			Renderer(const Renderer&)=delete;
+
+			Renderer& operator=(const Renderer&)=delete;
 
 			template<typename Pass, typename... Args>
 			void setFirstPass(const Shader& shader, Args&&... args)
@@ -107,12 +108,11 @@ namespace Elysium
 	
 			bool isClosed() const;
 
-
 		private:
 			bool m_terminate = false;
 			bool m_wasInit = false;
 			bool m_shaderBound = false;
 			Display m_display;
-			Renderer m_renderer;
+			RenderContext m_renderer;
 	};
 }	

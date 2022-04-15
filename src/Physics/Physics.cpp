@@ -10,7 +10,7 @@ namespace Physics
 								 PhysicsComponent& component,
 			   					 Transform transform)
 	{
-		component.addForce(Vec2(0.0,-g));
+		component.addForce(Vec2(0.0,-g/component.getMassInv()));
 	}
 		
 	SpringGenerator::SpringGenerator(const Real k, 
@@ -34,12 +34,12 @@ namespace Physics
 
 
 	void PhysicsEngine::update(const Real dt, 
-							   std::vector<Elysium::Entity>& entities,
+							   Elysium::World& world,
 							   Elysium::Context& context)
 	{
 		if(dt > 1.0)return;
 
-		for(Elysium::Entity entity : entities)
+		for(Elysium::Entity entity : world.getEntities())
 		{
 			if(entity->hasComponent<PhysicsComponent>())
 			{
@@ -51,13 +51,37 @@ namespace Physics
 				{
 					forceGen->apply(dt, *component, entity->getTransform());
 				}
-//					  ->updateLoads(dt);
 
 				component->update(dt, component->getLoads());
-//entity->getComponent<PhysicsComponent>()
-//					  ->resetLoads();
 
+				for(Elysium::Entity entity2 : world.getEntities())
+				{
+					if(entity2->getID() <= entity->getID()) continue;
+					if(entity2->hasComponent<PhysicsComponent>())
+					{
+						std::shared_ptr<PhysicsComponent> component2 =
+								entity2->getComponent<PhysicsComponent>();
+
+						std::shared_ptr<Contact> contact =
+							m_detector.collide(component->getCollider(),
+											   component2->getCollider());
+
+						if(contact != nullptr)
+						{
+							m_contacts.push(
+								std::make_shared<Collision>(component,
+									component2, contact->positionBody1,
+									contact->positionBody2));
+						}
+					}	
+				}
 			}
+		}
+
+		while(!m_contacts.empty())
+		{
+			m_constraintSolver.applyImpulse(dt, m_contacts.top());
+			m_contacts.pop();
 		}
 
 		for(std::shared_ptr<Joint> joint : m_joints)
@@ -65,7 +89,7 @@ namespace Physics
 			m_constraintSolver.applyImpulse(dt, joint);
 		}
 
-		for(Elysium::Entity entity : entities)
+		for(Elysium::Entity entity : world.getEntities())
 		{
 			if(entity->hasComponent<PhysicsComponent>())
 			{

@@ -1,10 +1,11 @@
 #pragma once
 
 #include "Math.h"
+#include "BVH.h"
 #include <memory>
 #include <unordered_map>
 
-const int DIMENSION = 2;
+#define DIMENSION 2
 
 using Circe::Real;
 using Circe::Vec2;

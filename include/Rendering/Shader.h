@@ -6,46 +6,11 @@
 #include <GL/glew.h>
 #include <Circe/Circe.h>
 #include "Game/Camera.h"
+#include "Game/Register.h"
 #include "Rendering/Texture.h"
 
 namespace Elysium
 {
-	class Shader;
-
-	class UniformMap
-	{
-		struct BufferPosition
-		{
-			unsigned int size;
-			unsigned int offset;
-		};
-
-		public:
-			void uploadUniforms(Shader& shader);
-		
-			void setUniform(const std::string& name,
-							const std::vector<Real> value);
-
-			void setUniform(const std::string& name, const Real& value);
-
-			void setUniform(const std::string& name, 
-							const Circe::Vec2& value);
-
-			void setUniform(const std::string& name, 
-							const Circe::Vec3& value);
-
-			void setUniform(const std::string& name, 
-							const Mat& value);
-
-			std::vector<Real> operator()(const std::size_t nameID) const;
-
-			bool hasUniform(const std::size_t nameID) const;
-
-		private:
-			std::vector<Real> m_values;
-			std::unordered_map<std::size_t, BufferPosition> m_positions;
-	};
-
 	class Shader
 	{
 		struct Uniform
@@ -58,7 +23,7 @@ namespace Elysium
 		public:
 			void bind();
 
-			void updateUniforms(const UniformMap& uniformMap);
+			void updateUniforms(const Register& uniformMap);
 
 			void updateUniform(const std::string& name, 
 							   const Real& value);

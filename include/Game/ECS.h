@@ -4,10 +4,12 @@
 #include <typeindex>
 #include <iostream>
 #include <Circe/Circe.h>
+#include "Rendering/RenderingEngine.h"
+#include "Game/Register.h"
 
 namespace Elysium
 {
-	typedef int EntityID;
+	typedef unsigned int EntityID;
 
 	class Context;
 	class EntityData;
@@ -17,6 +19,9 @@ namespace Elysium
 	{
 		public:
 			virtual void update(Entity& entity, const Real dt);
+
+			virtual void draw(Entity& entity,
+							  std::shared_ptr<Renderer> renderer);
 
 			void setEntityID(const EntityID id);
 
@@ -35,7 +40,8 @@ namespace Elysium
 
 			EntityData(const EntityData&) = delete;
 
-			void update(Entity& entity, const Real dt);
+			void update(Entity& entity, std::shared_ptr<Renderer> renderer,
+						const Real dt);
 
 			template<class T, typename... Args>
 			void addComponent(Args&&... args)
@@ -58,18 +64,23 @@ namespace Elysium
 				return m_components.find(getComponentId<T>()) != 
 								m_components.end();
 			}
-			
-/*			template<typename T1, typename... Ts>
-			bool hasComponents()
-			{
-				return hasComponents<T1>() && hasComponents<Ts...>();
-			}
-*/
+		
 			Transform getTransform();
 
 			EntityID getID() const;
 
+			template<typename T>
+			void setVariable(const std::string& name, const T& var)
+			{
+				m_register.setVariable(name, var);
+			}
+
+			std::vector<Real> getVariable(const std::string& name);
+
+			bool hasVariable(const std::string& name) const;
+
 		private:
+			Register m_register;
 			static EntityID allid;			
 			const EntityID id;
 			map<std::type_index, std::shared_ptr<Component>> m_components;	
@@ -82,11 +93,13 @@ namespace Elysium
 			}
 	};
 
+	class World;
+
 	class System
 	{
 		public:
 			virtual void update(const Real dt, 
-								std::vector<Entity>& entities,
+								World& world,
 								Context& context) = 0;
 	};
 }

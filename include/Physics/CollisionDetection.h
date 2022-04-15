@@ -1,7 +1,7 @@
 #pragma once
+
 #include "Circe/Circe.h"
-#include "Game/Game.h"
-#include "Rendering/RenderingPass.h"
+#include "Game/Debug.h"
 
 /** TODO persistence to warm-start: build simplex with former point 
 	at beginning of GJK => Done
@@ -12,6 +12,75 @@
 
 namespace Physics
 {
+	struct AABB : public Circe::PrimitiveCollider<AABB>
+	{
+		AABB();
+
+		AABB(const Vec& center, const Vec& width);
+
+		void refit(const AABB& v1, const AABB& v2);
+
+		bool isInside(const AABB& v) const;
+
+		/** AABB to AABB intersection **/ 
+		virtual bool intersects(const AABB& other) const;
+
+		Real getUnionArea(const AABB& s1) const;
+
+		Real getArea() const;
+
+		void setPosition(const Vec& position);
+
+		void setMargin(const Vec& v);
+
+		void draw(const Vec3& color);
+
+		Real getBarneHutRatio(const Vec& dr) const;
+
+		Vec getCoG() const;
+
+		Real getMass() const;
+
+		void setMass(const Real m);
+
+		Vec center;
+		Vec halfWidth;
+		Vec margin;
+		Real mass;
+		Vec cog;
+		Real gravityWidth;
+	};
+
+	struct Point : public Circe::PrimitiveCollider<AABB>
+	{
+		Point(const Vec& location);
+
+		virtual bool intersects(const AABB& box) const;
+
+		Vec position;
+	};
+
+	//https://web.archive.org/web/20090803054252/http://tog.acm.org/resources/GraphicsGems/gems/RayBox.c
+	struct Ray : public Circe::PrimitiveCollider<AABB>
+	{
+		Ray(const Vec& origin, const Vec& direction);
+
+		virtual bool intersects(const AABB& box) const;
+
+		Vec origin;
+		Vec dir;
+	};
+
+	struct Segment : public Circe::PrimitiveCollider<AABB>
+	{
+		Segment(const Vec& pStart, const Vec& pEnd);
+
+		virtual bool intersects(const AABB& box) const;
+
+		Vec p0;
+		Vec p1;
+	};
+
 	const int SHAPE_MAX_VERTICES = 200;
 
 	struct Contact
@@ -22,13 +91,13 @@ namespace Physics
 		Real depth;
 	};
 
-	class Shape
+	class Collider
 	{
 		public:
-			Shape();
+			Collider();
 
-			Shape(const std::vector<Vec>& points, 
-				  const Transform transform);
+			Collider(const std::vector<Vec>& points, 
+				  	 const Transform transform);
 
 			int getSupportIndex(const Vec& direction) const;
 
@@ -45,6 +114,7 @@ namespace Physics
 			std::vector<Vec> m_points;
 			Real m_radius;
 	};
+
 
 	struct Vertex
 	{
@@ -103,22 +173,27 @@ namespace Physics
 	class CollisionDetector
 	{
 		public:
-			std::shared_ptr<Contact> nearCollision
-				(Simplex& simplex, const Shape& s1, const Shape& s2) const;
+			std::shared_ptr<Contact> collide
+				(const Collider& s1, const Collider& s2, 
+				 Simplex& simplex) const;
+
+			std::shared_ptr<Contact> collide
+				(const Collider& s1, const Collider& s2) const;
 
 			std::shared_ptr<Contact> solveEPA
-				(Simplex& simplex, const Shape& s1, const Shape& s2) const;
+				(Simplex& simplex, 
+				 const Collider& s1, const Collider& s2) const;
 
-			bool solveGJK(Simplex& simplex, const Shape& s1, 
-						const Shape& s2) const;
+			bool solveGJK(Simplex& simplex, const Collider& s1, 
+						const Collider& s2) const;
 
-			bool broadPhase(const Shape& s1, const Shape& s2) const;
+			bool broadPhase(const Collider& s1, const Collider& s2) const;
 
 		private:
 			bool isOriginInSimplex(Simplex& simplex, 
 						   		   Vec& d) const;
 
-			Vertex getSupport(const Shape& s1, const Shape& s2, 
+			Vertex getSupport(const Collider& s1, const Collider& s2, 
 						    const Vec& direction) const;
 
 			Vec2 getBarycentricCoordinates(const Vec2& p, const Vec2& a, 

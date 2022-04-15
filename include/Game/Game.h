@@ -9,6 +9,8 @@
 #include "Rendering/RenderingEngine.h"
 #include "Game/Input.h"
 #include "Game/ECS.h"
+#include "Game/Debug.h"
+#include "Game/World.h"
 
 namespace Elysium
 {
@@ -44,44 +46,28 @@ namespace Elysium
 	class Game
 	{
 		public:
-			virtual void init(Context& context) = 0;
+			virtual void init(World& world, Context& context) = 0;
 
 			/** User-hook for regular update */ 
 			virtual void update(const Real dt,
-								std::vector<Entity>& entities,
+								World& world,
 								Context& context) = 0;
 
 			/** Calls the update on every system + user-hook update */ 
-			void update(const Real dt, Context& context);
+			void updateAll(const Real dt, World& world, Context& context);
 
 			void addSystem(const std::shared_ptr<System> system);
 
-			Entity newEntity();
+//			Entity newEntity();
 
-			Entity newSprite(const std::string& textureName);
+//			Entity newSprite(const std::string& textureName);
 
-			static void SetRenderer
-						(const std::shared_ptr<RenderingEngine> renderer);
+			std::shared_ptr<Renderer> getRenderer() const;
 
-			static std::shared_ptr<RenderingEngine> Renderer();
+			void setRenderer(const std::shared_ptr<Renderer> renderer);
 
 		private:
-			static std::shared_ptr<RenderingEngine> m_rendering;
-			std::vector<Entity> m_entities;
+			std::shared_ptr<Renderer> m_renderer;
 			std::vector<std::shared_ptr<System>> m_systems;
-	};
-
-	class GameLoop
-	{
-		public:
-			GameLoop(const std::shared_ptr<Game> game);
-
-			void start();
-
-		private:
-			Context m_context;
-			std::shared_ptr<Game> m_game;
-			bool m_running;
-			void run();
 	};
 }

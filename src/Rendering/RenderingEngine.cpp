@@ -10,7 +10,7 @@ namespace Elysium
 				m_id(std::type_index(typeid(RenderingNode)))
 	{}
 
-	void RenderingNode::init(Renderer& renderer)
+	void RenderingNode::init(RenderContext& renderer)
 	{
 		m_shader.bind();
 		m_pass->init(renderer, m_shader);
@@ -19,7 +19,7 @@ namespace Elysium
 			m_next->init(renderer);
 	}
 
-	void RenderingNode::draw(Renderer& renderer)
+	void RenderingNode::draw(RenderContext& renderer)
 	{
 		m_shader.bind();
 		m_pass->draw(renderer, m_shader);
@@ -33,7 +33,7 @@ namespace Elysium
 		return m_id;
 	}
 
-	RenderingEngine::RenderingEngine(const std::string& name, 
+	Renderer::Renderer(const std::string& name, 
 									 const int width,
 									 const int height,
 									 const int nbBuffers)
@@ -41,7 +41,7 @@ namespace Elysium
 					  m_renderer(width, height, nbBuffers)
 	{}
 
-	void RenderingEngine::init()
+	void Renderer::init()
 	{
 		m_wasInit = true;
 
@@ -49,7 +49,7 @@ namespace Elysium
 			m_next->init(m_renderer);
 	}
 
-	void RenderingEngine::draw(Model& model, const Transform transform)
+	void Renderer::draw(Model& model, const Transform transform)
 	{
 		if(!m_shaderBound)
 		{
@@ -60,7 +60,7 @@ namespace Elysium
 		m_pass->draw(model, transform, m_renderer, m_shader);
 	}
 
-	void RenderingEngine::draw()
+	void Renderer::draw()
 	{
 		if(!m_wasInit)
 		{
@@ -72,12 +72,12 @@ namespace Elysium
 		swapBuffers();
 	}
 
-	Camera& RenderingEngine::getCamera()
+	Camera& Renderer::getCamera()
 	{
 		return m_renderer.getCamera();
 	}
 
-	void RenderingEngine::swapBuffers()
+	void Renderer::swapBuffers()
 	{
 		m_display.update();
 	}

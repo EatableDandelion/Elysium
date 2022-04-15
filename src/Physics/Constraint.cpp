@@ -7,10 +7,12 @@ namespace Physics
 				 component1(component1),
 				 component2(component2)
 	{
-		angle0 = component2->getTransform()->
-				 angleWith(*(component1->getTransform()));
+		
 	}
 
+
+	void Joint::restrictLambda(Mat& lambda)
+	{}
 
 	Mat Joint::getV()
 	{
@@ -72,8 +74,8 @@ namespace Physics
 		component1->update(dt, Vec3(-F(0),-F(1),-F(2)-dt*moment));
 		
 		Vec r2 = getR2();
-		moment = r2(0)*F(1)-r2(1)*F(0);	
-		component2->update(dt, Vec3(F(0),F(1),F(2)+dt*moment));
+		moment = r2(0)*F(4)-r2(1)*F(3);	
+		component2->update(dt, Vec3(-F(3),-F(4),-F(5)-dt*moment));
 	}
 
 	void ConstraintSolver::applyImpulse(const Real dt, 
@@ -87,16 +89,18 @@ namespace Physics
 		motor(2) = 1.0*cos(0.05*t);
 		b = b + motor;
 	*/	t += dt;
-		Mat lambdaNew = (J*v+b)/K; 
+		Mat lambda = (J*v+b)/K; 
 
 		if(firstStep)
 		{
 			firstStep = false;
-			lambda = lambdaNew;
+//			lambda = lambdaNew;
 		}
 
 		Real w = 0.9;
-		lambda = lambdaNew*w + lambda*(1.0-w);
+//		lambda = lambdaNew*w + lambda*(1.0-w);
+
+		joint->restrictLambda(lambda);
 
 		joint->update(dt, J, lambda);
 	}
@@ -108,6 +112,9 @@ namespace Physics
 	{
 		setAnchor1(component1->getPosition());
 		setAnchor2(component1->getPosition());
+		
+		angle0 = component2->getTransform()->
+				 angleWith(*(component1->getTransform()));
 	}
 			
 
@@ -208,14 +215,11 @@ namespace Physics
 		Real limit = 20.0*3.141593/180.0;
 		angle = std::max(-limit, std::min(limit, angle));
 
-		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()
-					->drawVector(component1->getPosition(), r1);	
+		Debug.drawVector(component1->getPosition(), r1);	
 
-		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()
-					->drawVector(component2->getPosition(), r2);	
+		Debug.drawVector(component2->getPosition(), r2);	
 
-		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()
-					->drawLine(component1->getPosition(), 
+		Debug.drawLine(component1->getPosition(), 
 							   component2->getPosition(),
 							   Vec3(0,1,1));	
 
@@ -254,11 +258,9 @@ namespace Physics
 		J(2,2) = -1.0;
 		J(2,5) = 1.0;
 
-		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()
-					->drawVector(component1->getPosition(), r1);	
+		Debug.drawVector(component1->getPosition(), r1);	
 
-		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()
-					->drawVector(component2->getPosition(), r2);	
+		Debug.drawVector(component2->getPosition(), r2);	
 
 		return J;
 	}
@@ -275,11 +277,13 @@ namespace Physics
 	}
 	
 	Collision::Collision(const std::shared_ptr<PhysicsComponent> component1,
-			 			 const std::shared_ptr<PhysicsComponent> component2)
+			 			 const std::shared_ptr<PhysicsComponent> component2,
+						 const Vec& r1, const Vec& r2)
 			:Joint(component1, component2)
 	{
-		setAnchor1(component1->getPosition()+Vec(1,0));
-		setAnchor2(component1->getPosition()-Vec(1,0));
+		setAnchor1(r1);
+		setAnchor2(r2);
+		n = r2-r1;
 	}
 			
 	Mat Collision::getJ()
@@ -292,22 +296,47 @@ namespace Physics
 
 		Vec2 n1 = component1->getTransform()->toGlobal(n,false);
 
-		Mat J(2, 6);
+		Mat J(1, 6);
 		J(0,0) = -n1(0);
 		J(0,1) = -n1(1);
 		J(0,2) = -Circe::cross(r1, n1);
-		J(1,2) = -1.0;
+//		J(1,2) = -1.0;
 
 		J(0,3) = n1(0);
 		J(0,4) = n1(1);
 		J(0,5) = Circe::cross(r2, n1);
-		J(1,5) = 1.0;
+//		J(1,5) = 1.0;
 
 		return J;
 	}
 
 	Mat Collision::getC()
 	{
-		return Mat(2,1);
+		Vec r1 = getR1();
+		Vec r2 = getR2();
+
+		Real o1 = component1->getAngularVelocity();
+		Real o2 = component2->getAngularVelocity();
+
+		Vec C_rest = component2->getVelocity() + Vec2(-r2(1),r2(0))*o2 
+			  - component1->getVelocity() - Vec2(-r1(1),r1(0))*o1;
+
+		Vec2 n1 = component1->getTransform()->toGlobal(n,false);
+
+		Real b_rest = dot(C_rest,n1)*0.01;
+
+
+		Vec C_pen = component2->getPosition() + r2
+				  - component1->getPosition() - r1;
+
+		Real b_pen = dot(C_pen, n1)*0.02;
+
+		return Mat(1,1, {b_pen+b_rest});
+//		return Mat(1,1, {0});
+	}
+	
+	void Collision::restrictLambda(Mat& lambda)
+	{
+		lambda(0) = std::max(0.0, lambda(0));
 	}
 }

@@ -49,9 +49,9 @@ namespace Elysium
 		public:
 			DirectionalLightPass(const Mesh& mesh);
 
-			virtual void init(Renderer& renderer, Shader& shader);
+			virtual void init(RenderContext& renderer, Shader& shader);
 
-			virtual void draw(Renderer& renderer, Shader& shader);
+			virtual void draw(RenderContext& renderer, Shader& shader);
 
 			void addLight(const DirectionalLight& light);
 
@@ -65,9 +65,9 @@ namespace Elysium
 		public:
 			PointLightPass(const Mesh& mesh);
 
-			virtual void init(Renderer& renderer, Shader& shader);
+			virtual void init(RenderContext& renderer, Shader& shader);
 
-			virtual void draw(Renderer& renderer, Shader& shader);
+			virtual void draw(RenderContext& renderer, Shader& shader);
 
 			void addLight(const PointLight& light);
 
@@ -82,9 +82,9 @@ namespace Elysium
 			AmbientPass(const Mesh& screen, 
 						const Real intensity);
 
-			virtual void init(Renderer& renderer, Shader& shader);
+			virtual void init(RenderContext& renderer, Shader& shader);
 
-			virtual void draw(Renderer& renderer, Shader& shader);
+			virtual void draw(RenderContext& renderer, Shader& shader);
 
 			void setIntensity(const Real intensity);
 
@@ -98,9 +98,9 @@ namespace Elysium
 		public:
 			StencilPass(const Mesh& mesh);
 
-			virtual void init(Renderer& renderer, Shader& shader);
+			virtual void init(RenderContext& renderer, Shader& shader);
 
-			virtual void draw(Renderer& renderer, Shader& shader);
+			virtual void draw(RenderContext& renderer, Shader& shader);
 
 			void addLight(const std::shared_ptr<Light> light);
 

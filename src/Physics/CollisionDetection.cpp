@@ -4,11 +4,222 @@
 //https://www.youtube.com/watch?v=ajv46BSqcK4
 namespace Physics
 {
-	Shape::Shape()
+	AABB::AABB()
 	{}
 
-	Shape::Shape(const std::vector<Vec>& points, const Transform transform)
-		: m_transform(transform)
+	AABB::AABB(const Vec& center, const Vec& width)
+			: center(center), halfWidth(width*0.5)
+	{}
+
+	void AABB::refit(const AABB& v1, const AABB& v2)
+	{
+		for(int i = 0; i<DIMENSION; i++)
+		{
+			Real minBound = std::min(
+					v1.center(i)-v1.halfWidth(i)
+					+std::min(v1.margin(i),0.0),
+					v2.center(i)-v2.halfWidth(i)
+					+std::min(v2.margin(i),0.0));
+			Real maxBound = std::max(
+					v1.center(i)+v1.halfWidth(i)
+					+std::max(v1.margin(i),0.0),
+					v2.center(i)+v2.halfWidth(i)
+					+std::max(v2.margin(i),0.0));
+
+			center(i)    = (maxBound + minBound) * 0.5;
+			halfWidth(i) = (maxBound - minBound) * 0.5;
+		}
+
+		mass = v1.mass + v2.mass;
+		if(mass > 0)
+		{
+			cog = v1.cog * (v1.mass/mass)+ v2.cog * (v2.mass/mass);
+			Vec dr = v1.cog - v2.cog;
+			Real weight = 2.0*std::max(v1.mass, v2.mass)/mass;
+			gravityWidth = dot(dr,dr)*(weight*weight);
+		}
+	}
+
+	bool AABB::isInside(const AABB& v) const
+	{
+		for(int i = 0; i<DIMENSION; i++)
+		{
+			if(std::abs(center(i)-v.center(i))+halfWidth(i) 
+						> v.halfWidth(i)) return false;
+		}
+		return true;
+	}
+
+	/** AABB to AABB intersection **/ 
+	bool AABB::intersects(const AABB& other) const
+	{
+		for(int i = 0; i<DIMENSION; i++)
+			if(std::abs(center(i)-other.center(i)) > 
+			   halfWidth(i) + other.halfWidth(i)) return false;
+		
+		return true;
+	}
+
+	Real AABB::getUnionArea(const AABB& s1) const
+	{
+		AABB aabb(center, halfWidth);
+		aabb.refit(aabb, s1);
+		return aabb.getArea();
+	}
+
+	Real AABB::getArea() const
+	{
+		Real A = 1.0;
+		for(int i = 0; i<DIMENSION; i++)
+			A *= 2.0*halfWidth(i);
+
+		return A;
+	}
+
+	void AABB::setPosition(const Vec& position)
+	{
+		center = position;
+		cog = position;
+	}
+
+	void AABB::setMargin(const Vec& v)
+	{
+		margin = v;
+	}
+
+	void AABB::draw(const Vec3& color)
+	{
+		Debug.drawBox(center, halfWidth, color);
+	}
+
+	Real AABB::getBarneHutRatio(const Vec& dr) const
+	{
+		Real d2 = dot(dr, dr);
+		return gravityWidth/d2;
+	}
+
+	Vec AABB::getCoG() const
+	{
+		return cog;
+	}
+
+	Real AABB::getMass() const
+	{
+		return mass;
+	}
+
+	void AABB::setMass(const Real m)
+	{
+		mass = m;
+	}
+
+	Point::Point(const Vec& location) : position(location)
+	{}
+
+	bool Point::intersects(const AABB& box) const
+	{
+		for(int i = 0; i<DIMENSION; i++)
+			if(std::abs(box.center(i)-position(i)) > box.halfWidth(i))
+				return false;
+
+		return true;
+	}
+
+	Ray::Ray(const Vec& origin, const Vec& direction)
+		: origin(origin), dir(direction)
+	{}
+
+	bool Ray::intersects(const AABB& box) const
+	{
+		bool inside = true;
+		int quadrant[DIMENSION];
+		int whichPlane;
+		Vec maxT;
+		Vec candidatePlane;
+		Vec minB = box.center-box.halfWidth;
+		Vec maxB = box.center+box.halfWidth;
+		Vec coord;
+
+		for(int i = 0; i<DIMENSION; i++)
+		{
+			if(origin(i) < minB(i))
+			{
+				quadrant[i] = 1;
+				candidatePlane(i) = minB(i);
+				inside = false;
+			}
+			else if(origin(i) > maxB(i))
+			{
+				quadrant[i] = 0;
+				candidatePlane(i) = maxB(i);
+				inside = false;
+			}
+			else
+			{
+				quadrant[i] = 2;
+			}	
+		}
+
+		if(inside)
+		{
+			return true;
+		}
+
+		for(int i = 0; i<DIMENSION; i++)
+		{
+			if(quadrant[i] != 2 && dir(i) != 0.0)
+				maxT(i) = (candidatePlane(i) - origin(i)) / dir(i);
+			else
+				maxT(i) = -1.0;
+		}
+
+		whichPlane = 0;
+		for(int i = 1; i<DIMENSION; i++)
+			if(maxT(whichPlane) < maxT(i))
+				whichPlane = i;
+
+		if(maxT(whichPlane) < 0.0) return false;
+		for(int i = 0; i<DIMENSION; i++)
+		{
+			if(whichPlane != i)
+			{
+				coord(i) = origin(i) + maxT(whichPlane) * dir(i);
+				if(coord(i) < minB(i) || coord(i) > maxB(i))
+					return false;
+			}
+			else
+			{
+				coord(i) = candidatePlane(i);
+			}
+		}
+
+		return true;
+	}
+
+	Segment::Segment(const Vec& pStart, const Vec& pEnd)
+		: p0(pStart), p1(pEnd)
+	{}
+
+	bool Segment::intersects(const AABB& box) const
+	{
+		Vec minB = box.center-box.halfWidth;
+		Vec maxB = box.center+box.halfWidth;
+
+		for(int i = 0; i<DIMENSION; i++)
+		{
+			if(p0(i) < minB(i) && p1(i) < minB(i)) return false;
+			if(p0(i) > maxB(i) && p1(i) > maxB(i)) return false;
+		}
+
+		return Ray(p0, Circe::normalize(p1-p0)).intersects(box);
+	}
+
+	Collider::Collider()
+	{}
+
+	Collider::Collider(const std::vector<Vec>& points, 
+					   const Transform transform)
+					  : m_transform(transform)
 	{
 		int n = 0;
 		Vec center;
@@ -27,7 +238,7 @@ namespace Physics
 		}
 	}
 
-	int Shape::getSupportIndex(const Vec& direction) const
+	int Collider::getSupportIndex(const Vec& direction) const
 	{
 		Vec dir = m_transform->toLocal(direction, false);
 		Real dmax = dot(dir, m_points[0]);
@@ -48,32 +259,33 @@ namespace Physics
 		return index;
 	}
 
-	Vec Shape::getPosition(const int index) const
+	Vec Collider::getPosition(const int index) const
 	{
 		return m_transform->toGlobal(m_points[index], true);
 	}
 
-	Vec Shape::getCenter() const
+	Vec Collider::getCenter() const
 	{
 		return m_transform->getPosition();
 	}
 
-	Real Shape::getRadius() const
+	Real Collider::getRadius() const
 	{
 		return m_radius;
 	}
 
-	void Shape::draw(const Vec3& c) const
+	void Collider::draw(const Vec3& c) const
 	{
 		for(int i = 0; i<m_points.size()-1; i++)
 		{
 			Vec p1 = m_transform->toGlobal(m_points[i], true);
 			Vec p2 = m_transform->toGlobal(m_points[i+1], true);
-			Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()->drawLine(p1, p2, c);	
+			Debug.drawLine(p1, p2, c);	
 		}
 		Vec p1 = m_transform->toGlobal(m_points[m_points.size()-1], true);
 		Vec p2 = m_transform->toGlobal(m_points[0], true);
-		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()->drawLine(p1, p2, c);	
+		
+		Debug.drawLine(p1, p2, c);	
 	}
 
 	void Simplex::append(const Vertex& point)
@@ -107,13 +319,9 @@ namespace Physics
 	{
 		for(int i = 0; i<m_size-1; i++)
 		{
-			Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()
-							->drawLine(m_points[i].position, 
-									   m_points[i+1].position);	
+			Debug.drawLine(m_points[i].position, m_points[i+1].position);	
 		}
-		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()
-						->drawLine(m_points[m_size-1].position, 
-								   m_points[0].position);	
+		Debug.drawLine(m_points[m_size-1].position, m_points[0].position);	
 
 	}
 
@@ -204,39 +412,44 @@ namespace Physics
 
 	void Polytope::draw()
 	{
-		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()->drawLine(Vec2(-0.2,0.0),Vec2(0.2,0.0));	
-		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()->drawLine(Vec2(0.0,-0.2),Vec2(0.0,0.2));	
+		Debug.drawLine(Vec2(-0.2,0.0),Vec2(0.2,0.0));	
+		Debug.drawLine(Vec2(0.0,-0.2),Vec2(0.0,0.2));	
 
 		for(int i = 0; i<m_points.size()-1; i++)
 		{
-			Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()
-							->drawLine(m_points[i].position, 
-									   m_points[i+1].position);	
+			Debug.drawLine(m_points[i].position, m_points[i+1].position);	
 		}
-		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()
-						->drawLine(m_points[m_points.size()-1].position, 
+		Debug.drawLine(m_points[m_points.size()-1].position, 
 								   m_points[0].position);	
 	}
 
-	std::shared_ptr<Contact> CollisionDetector::nearCollision
-								(Simplex& simplex,
-								 const Shape& s1, 
-								 const Shape& s2) const
+	std::shared_ptr<Contact> CollisionDetector::collide
+								(const Collider& s1, 
+								 const Collider& s2,
+								 Simplex& simplex) const
 	{
 		if(broadPhase(s1, s2))
 		{
 			if(solveGJK(simplex, s1, s2))
 			{
-				s1.draw(Vec3(1,0,0));
-				s2.draw(Vec3(1,0,0));
+			//	s1.draw(Vec3(1,0,0));
+			//	s2.draw(Vec3(1,0,0));
 				return solveEPA(simplex, s1, s2);							
 			}
 		}
 		return nullptr;
 	}
 
+	std::shared_ptr<Contact> CollisionDetector::collide
+								(const Collider& s1, 
+								 const Collider& s2) const
+	{
+		Simplex simplex;
+		return collide(s1, s2, simplex);
+	}
+
 	std::shared_ptr<Contact> CollisionDetector::solveEPA
-			(Simplex& simplex, const Shape& s1, const Shape& s2) const
+			(Simplex& simplex, const Collider& s1, const Collider& s2) const
 	{
 		int maxIteration = 10;
 		int iteration = 0;
@@ -288,16 +501,16 @@ namespace Physics
 		contact->positionBody2 = pos2;
 
 		
-		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()->drawEllipse(pos1,Vec2(0.1,0.1),Vec3(1,0,0));	
-		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()->drawEllipse(pos2,Vec2(0.1,0.1),Vec3(1,0,0));	
-		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()->drawVector(pos2,e.normal,e.distance);	
+		Debug.drawEllipse(pos1,Vec2(0.1,0.1),Vec3(1,0,0));	
+		Debug.drawEllipse(pos2,Vec2(0.1,0.1),Vec3(1,0,0));	
+		Debug.drawVector(pos2,e.normal,e.distance);	
 		return contact;
 
 	}
 
 	bool CollisionDetector::solveGJK(Simplex& simplex, 
-									 const Shape& s1, 
-									 const Shape& s2) const
+									 const Collider& s1, 
+									 const Collider& s2) const
 	{	
 		Vec d;
 	   
@@ -341,20 +554,17 @@ namespace Physics
 		return false;
 	}
 
-	bool CollisionDetector::broadPhase(const Shape& s1, 
-									   const Shape& s2) const
+	bool CollisionDetector::broadPhase(const Collider& s1, 
+									   const Collider& s2) const
 	{
 		Vec dx = s2.getCenter() - s1.getCenter();
+
 		if(std::sqrt(dot(dx,dx)) <= (s1.getRadius() + s2.getRadius()))
 		{
-/*		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()->drawEllipse(s1.getCenter(),Vec2(1,1)*s1.getRadius(),Vec3(1,0,0));	
-		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()->drawEllipse(s2.getCenter(),Vec2(1,1)*s2.getRadius(),Vec3(1,0,0));	
-*/			return true;
+			return true;
 		}
 
-/*		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()->drawEllipse(s1.getCenter(),Vec2(1,1)*s1.getRadius(),Vec3(0,0,1));	
-		Elysium::Game::Renderer()->getPass<Elysium::DebugPass>()->drawEllipse(s2.getCenter(),Vec2(1,1)*s2.getRadius(),Vec3(0,0,1));	
-*/		return false;
+		return false;
 	}
 
 	bool CollisionDetector::isOriginInSimplex(Simplex& simplex, 
@@ -402,7 +612,7 @@ namespace Physics
 		return false;
 	}
 
-	Vertex CollisionDetector::getSupport(const Shape& s1, const Shape& s2, 
+	Vertex CollisionDetector::getSupport(const Collider& s1, const Collider& s2, 
 									  const Vec& direction) const
 	{
 		Vertex v;

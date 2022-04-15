@@ -3,14 +3,14 @@
 namespace Elysium
 {
 
-	Renderer::Renderer(const int width, 
+	RenderContext::RenderContext(const int width, 
 					   const int height, 
 					   const int nbBuffers)
 		:m_camera(70.0f, (Real)width/(Real)height, 0.01f, 1000.0f),
 		 m_frame(width, height, nbBuffers), m_screenSize(width, height)
 	{
-		enable(Renderer::DEPTH_READ);
-		enable(Renderer::DEPTH_WRITE);
+		enable(RenderContext::DEPTH_READ);
+		enable(RenderContext::DEPTH_WRITE);
 
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_FRONT);
@@ -20,12 +20,12 @@ namespace Elysium
 		glLineWidth(3);
 	}
 	
-	Camera& Renderer::getCamera()
+	Camera& RenderContext::getCamera()
 	{
 		return m_camera;
 	}
 
-	void Renderer::enable(const RenderBit kw)
+	void RenderContext::enable(const RenderBit kw)
 	{
 		if(BLEND & kw)
 			glEnable(GL_BLEND);
@@ -46,7 +46,7 @@ namespace Elysium
 			glEnable(GL_CULL_FACE);
 	}
 
-	void Renderer::disable(const RenderBit kw)
+	void RenderContext::disable(const RenderBit kw)
 	{
 		if(BLEND & kw)
 			glDisable(GL_BLEND);
@@ -67,8 +67,8 @@ namespace Elysium
 			glDisable(GL_CULL_FACE);
 	}
 
-	void Renderer::clear(const Real color, const bool diffuse,
-						 const bool depth, const bool stencil)
+	void RenderContext::clear(const Real color, const bool diffuse,
+						 	  const bool depth, const bool stencil)
 	{
 		glClearColor(color, color, color, 1.0f);
 		
@@ -80,31 +80,32 @@ namespace Elysium
 		glClear(mask);
 	}
 
-	void Renderer::applyDepthBuffer()
+	void RenderContext::applyDepthBuffer()
 	{
 		m_frame.applyDepthBuffer();
 	}
 	
-	Circe::Vec2 Renderer::getScreenSize() const
+	Circe::Vec2 RenderContext::getScreenSize() const
 	{
 		return m_screenSize;
 	}
 	
 	
-	void GeometryPass::init(Renderer& renderer, Shader& shader)
+	void GeometryPass::init(RenderContext& renderer, Shader& shader)
 	{}
 
-	void GeometryPass::startDraw(Renderer& renderer)
+	void GeometryPass::startDraw(RenderContext& renderer)
 	{
-		renderer.disable(Renderer::BLEND);
-		renderer.enable(Renderer::FRAMEBUFFER);
-		renderer.enable(Renderer::DEPTH_WRITE | Renderer::DEPTH_READ);
+		renderer.disable(RenderContext::BLEND);
+		renderer.enable(RenderContext::FRAMEBUFFER);
+		renderer.enable(RenderContext::DEPTH_WRITE | 
+						RenderContext::DEPTH_READ);
 		renderer.clear(0.0f);
 	}
 	
 	void GeometryPass::draw(Model& model,		
 					  		const Transform transform, 
-							Renderer& renderer,
+							RenderContext& renderer,
 							Shader& shader)
 	{
 		if(!wasInit)
@@ -116,15 +117,15 @@ namespace Elysium
 		Mat mvp = renderer.getCamera().getViewProjection() 
 						*(transform->getTransformMatrix());
 
-		model.setUniform("MVP", mvp);
+		model.setVariable("MVP", mvp);
 
 		model.draw(shader);
 	}
 
-	void GeometryPass::draw(Renderer& renderer, Shader& shader)
+	void GeometryPass::draw(RenderContext& renderer, Shader& shader)
 	{
-		renderer.enable(Renderer::BLEND);
-		renderer.disable(Renderer::FRAMEBUFFER);
+		renderer.enable(RenderContext::BLEND);
+		renderer.disable(RenderContext::FRAMEBUFFER);
 		renderer.clear(0.0f, true, false, false);
 		renderer.applyDepthBuffer();
 		wasInit = false;
@@ -135,12 +136,13 @@ namespace Elysium
 			m_transform(std::make_shared<Circe::Trans<DIMENSION>>())
 	{}
 
-	void DebugPass::init(Renderer& renderer, Shader& shader)
+	void DebugPass::init(RenderContext& renderer, Shader& shader)
 	{}
 
-	void DebugPass::draw(Renderer& renderer, Shader& shader)
+	void DebugPass::draw(RenderContext& renderer, Shader& shader)
 	{
-		renderer.disable(Renderer::DEPTH_WRITE | Renderer::DEPTH_READ);
+		renderer.disable(RenderContext::DEPTH_WRITE | 
+						 RenderContext::DEPTH_READ);
 
 		while(!m_objects.empty())
 		{
@@ -189,6 +191,25 @@ namespace Elysium
 		m_objects.push(box);
 	}
 	
+	void DebugPass::drawBox(const Vec& center, const Vec& halfWidth,
+							const Vec3& color)
+	{
+		Vec p1, p2, p3, p4;
+	   	p1(0) = center(0)-halfWidth(0);
+	   	p1(1) = center(1)-halfWidth(1);
+	   	p2(0) = center(0)-halfWidth(0);
+	   	p2(1) = center(1)+halfWidth(1);
+	   	p3(0) = center(0)+halfWidth(0);
+	   	p3(1) = center(1)+halfWidth(1);
+	   	p4(0) = center(0)+halfWidth(0);
+	   	p4(1) = center(1)-halfWidth(1);
+
+		drawLine(p1, p2, color);
+		drawLine(p2, p3, color);
+		drawLine(p3, p4, color);
+		drawLine(p4, p1, color);
+	}
+
 	void DebugPass::drawEllipse(const Transform transform, 
 								const Vec3& color)
 	{	

@@ -6,9 +6,10 @@ namespace Elysium
 		:m_model(model)
 	{}
 
-	void RenderingComponent::update(Entity& entity, const Real dt)
+	void RenderingComponent::draw(Entity& entity, 
+								  std::shared_ptr<Renderer> renderer)
 	{
-		Game::Renderer()->draw(m_model, entity->getTransform());
+		renderer->draw(m_model, entity->getTransform());
 	}
 
 	Model RenderingComponent::getModel() const

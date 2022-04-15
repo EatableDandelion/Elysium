@@ -16,15 +16,15 @@ namespace Elysium
 {
 	typedef std::uint8_t RenderBit;
 
-	class Renderer
+	class RenderContext
 	{
 		public:
-			Renderer(const int width, 
-					 const int height, 
-					 const int nbBuffers);
+			RenderContext(const int width, 
+					 	  const int height, 
+					 	  const int nbBuffers);
 
-			Renderer(const Renderer&) = delete;
-			Renderer& operator=(const Renderer&) = delete;
+			RenderContext(const RenderContext&) = delete;
+			RenderContext& operator=(const RenderContext&) = delete;
 
 			Camera& getCamera();
 
@@ -58,36 +58,36 @@ namespace Elysium
 	{
 		public:
 			/** Override this to initialize constant shader uniforms */
-			virtual void init(Renderer& renderer, Shader& shader) = 0;
+			virtual void init(RenderContext& renderer, Shader& shader) = 0;
 
 			/** Set up the pass, draw all the models, finish pass */
-			virtual void draw(Renderer& renderer,
+			virtual void draw(RenderContext& renderer,
 							  Shader& shader) = 0;
 	
 
-			virtual void startDraw(Renderer& renderer){};
+			virtual void startDraw(RenderContext& renderer){};
 
 			virtual void draw(Model& model,
 					  const Transform transform, 
-					  Renderer& renderer,
+					  RenderContext& renderer,
 					  Shader& shader){};
 
-			virtual void endDraw(Renderer& renderer){};
+			virtual void endDraw(RenderContext& renderer){};
 	};
 
 	class GeometryPass : public RenderingPass
 	{
 		public:
-			virtual void init(Renderer& renderer, Shader& shader);
+			virtual void init(RenderContext& renderer, Shader& shader);
 
-			void startDraw(Renderer& renderer);
+			void startDraw(RenderContext& renderer);
 
 			void draw(Model& model,
 					  const Transform transform, 
-					  Renderer& renderer,
+					  RenderContext& renderer,
 					  Shader& shader);
 
-			virtual void draw(Renderer& renderer,
+			virtual void draw(RenderContext& renderer,
 							  Shader& shader);
 
 		private:
@@ -106,9 +106,9 @@ namespace Elysium
 	class DebugPass : public RenderingPass
 	{
 		public:
-			virtual void init(Renderer& renderer, Shader& shader);
+			virtual void init(RenderContext& renderer, Shader& shader);
 
-			virtual void draw(Renderer& renderer,
+			virtual void draw(RenderContext& renderer,
 							  Shader& shader);
 
 			void drawLine(const Vec& p1, const Vec& p2,
@@ -120,6 +120,9 @@ namespace Elysium
 
 			void drawBox(const Transform transform,
 						 const Vec3& color = Vec3(1,1,1));
+
+			void drawBox(const Vec& center, const Vec& halfWidth,
+						 const Vec3& color = Vec3(1,1,1)); 
 
 			void drawEllipse(const Transform transform,
 						 	 const Vec3& color = Vec3(1,1,1));

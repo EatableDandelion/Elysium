@@ -83,19 +83,19 @@ namespace Elysium
 		: m_mesh(mesh)	
 	{}
 
-	void DirectionalLightPass::init(Renderer& renderer, Shader& shader)
+	void DirectionalLightPass::init(RenderContext& renderer, Shader& shader)
 	{
 		shader.updateUniform("gPosition", Texture_Map::POSITION);
 		shader.updateUniform("gNormal", Texture_Map::NORMAL);
 		shader.updateUniform("gDiffuse", Texture_Map::DIFFUSE);
 	}
 
-	void DirectionalLightPass::draw(Renderer& renderer, Shader& shader)
+	void DirectionalLightPass::draw(RenderContext& renderer, Shader& shader)
 	{
 		
-		renderer.disable(Renderer::DEPTH_WRITE);
-		renderer.enable(Renderer::DEPTH_READ);
-		renderer.enable(Renderer::FACE_CULLING);
+		renderer.disable(RenderContext::DEPTH_WRITE);
+		renderer.enable(RenderContext::DEPTH_READ);
+		renderer.enable(RenderContext::FACE_CULLING);
 		
 		shader.updateUniform("eyePosition",  renderer.getCamera()
 											 .getTransform()
@@ -111,8 +111,8 @@ namespace Elysium
 			m_mesh.draw();
 		}
 
-		renderer.disable(Renderer::DEPTH_READ);
-		renderer.enable(Renderer::FACE_CULLING);
+		renderer.disable(RenderContext::DEPTH_READ);
+		renderer.enable(RenderContext::FACE_CULLING);
 	}	
 	
 	void DirectionalLightPass::addLight(const DirectionalLight& light)
@@ -124,18 +124,18 @@ namespace Elysium
 		: m_mesh(mesh)	
 	{}
 
-	void PointLightPass::init(Renderer& renderer, Shader& shader)
+	void PointLightPass::init(RenderContext& renderer, Shader& shader)
 	{
 		shader.updateUniform("gPosition", Texture_Map::POSITION);
 		shader.updateUniform("gNormal", Texture_Map::NORMAL);
 		shader.updateUniform("gDiffuse", Texture_Map::DIFFUSE);
 	}
 
-	void PointLightPass::draw(Renderer& renderer, Shader& shader)
+	void PointLightPass::draw(RenderContext& renderer, Shader& shader)
 	{
-		renderer.disable(Renderer::DEPTH_WRITE);
-		renderer.enable(Renderer::DEPTH_READ);
-		renderer.enable(Renderer::FACE_CULLING);
+		renderer.disable(RenderContext::DEPTH_WRITE);
+		renderer.enable(RenderContext::DEPTH_READ);
+		renderer.enable(RenderContext::FACE_CULLING);
 		
 		shader.updateUniform("eyePosition",  renderer.getCamera()
 											 .getTransform()
@@ -151,8 +151,8 @@ namespace Elysium
 			m_mesh.draw();
 		}
 
-		renderer.disable(Renderer::DEPTH_READ);
-		renderer.enable(Renderer::FACE_CULLING);
+		renderer.disable(RenderContext::DEPTH_READ);
+		renderer.enable(RenderContext::FACE_CULLING);
 	}
 	
 	void PointLightPass::addLight(const PointLight& light)
@@ -166,15 +166,16 @@ namespace Elysium
 		: m_screen(screen), m_intensity(intensity)
 	{}
 
-	void AmbientPass::init(Renderer& renderer, Shader& shader)
+	void AmbientPass::init(RenderContext& renderer, Shader& shader)
 	{
 		shader.updateUniform("gDiffuse", Texture_Map::DIFFUSE);
 	}
 
-	void AmbientPass::draw(Renderer& renderer, Shader& shader)
+	void AmbientPass::draw(RenderContext& renderer, Shader& shader)
 	{
 		shader.updateUniform("ambient", m_intensity);
-		renderer.disable(Renderer::DEPTH_WRITE | Renderer::DEPTH_READ);
+		renderer.disable(RenderContext::DEPTH_WRITE | 
+						 RenderContext::DEPTH_READ);
 
 		m_screen.draw();
 	}
@@ -187,13 +188,13 @@ namespace Elysium
 	StencilPass::StencilPass(const Mesh& mesh):m_mesh(mesh)
 	{}
 
-	void StencilPass::init(Renderer& renderer, Shader& shader)
+	void StencilPass::init(RenderContext& renderer, Shader& shader)
 	{}
 
-	void StencilPass::draw(Renderer& renderer, Shader& shader)
+	void StencilPass::draw(RenderContext& renderer, Shader& shader)
 	{
 //		glDrawBuffer(GL_NONE);
-		renderer.enable(Renderer::DEPTH_READ);
+		renderer.enable(RenderContext::DEPTH_READ);
 		renderer.disable(Renderer::FACE_CULLING);
 		renderer.clear(0, true, false, true);
 		glStencilFunc(GL_ALWAYS, 0, 0);

@@ -4,8 +4,10 @@ namespace Physics
 {
 	PhysicsComponent::PhysicsComponent(const Real mass, 
 									   const Vec& dimension,
-									   Transform transform)
-	: M_inv(1.0/mass), m_transform(transform), omega(0)
+									   Transform transform,
+									   std::vector<Vec>& collisionPoints)
+	: M_inv(1.0/mass), m_transform(transform), omega(0), 
+	  m_collider(collisionPoints, transform)
 	{
 		setInertia(dimension);
 	}
@@ -70,6 +72,7 @@ namespace Physics
 	void PhysicsComponent::setInertia(const Vec2 dimension)
 	{
 		I_inv = 5.0/(dimension(0)*dimension(0)+dimension(1)*dimension(1));	
+		I_inv *= M_inv;
 	}
 
 	Real PhysicsComponent::getMassInv() const
@@ -112,5 +115,10 @@ namespace Physics
 	Transform PhysicsComponent::getTransform() const
 	{
 		return m_transform;
+	}
+
+	Collider PhysicsComponent::getCollider() const
+	{
+		return m_collider;
 	}
 }
