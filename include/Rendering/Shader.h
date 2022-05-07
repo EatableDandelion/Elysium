@@ -6,7 +6,6 @@
 #include <GL/glew.h>
 #include <Circe/Circe.h>
 #include "Game/Camera.h"
-#include "Game/Register.h"
 #include "Rendering/Texture.h"
 
 namespace Elysium
@@ -23,7 +22,7 @@ namespace Elysium
 		public:
 			void bind();
 
-			void updateUniforms(const Register& uniformMap);
+			void updateUniforms(const Circe::Register& uniformMap);
 
 			void updateUniform(const std::string& name, 
 							   const Real& value);

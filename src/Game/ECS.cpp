@@ -10,9 +10,10 @@ namespace Elysium
 
 	EntityID EntityData::allid=0;
 	
-	EntityData::EntityData()
+	EntityData::EntityData(const std::shared_ptr<GameInterface> comm)
 		:id(allid++), 
-		 m_transform(std::make_shared<Circe::Trans<DIMENSION>>())
+		 m_transform(std::make_shared<Circe::Trans<DIMENSION>>()),
+		 m_gameInterface(comm)
 	{
 		CIRCE_INFO("Initializing new entity "+std::to_string(id));
 	}
@@ -20,6 +21,18 @@ namespace Elysium
 	EntityData::~EntityData()
 	{
 		CIRCE_INFO("Terminating entity "+std::to_string(id));
+		
+		std::shared_ptr<GameInterface> game = m_gameInterface.lock();
+		if(game)
+		{
+			for(auto pair : m_components)
+			{
+				if(m_components.count(pair.first))
+				{
+					game->onComponentRemoved(id, pair.first);
+				}
+			}
+		}
 		m_components.clear();
 	}
 	
@@ -46,7 +59,7 @@ namespace Elysium
 
 	std::vector<Real> EntityData::getVariable(const std::string& name)
 	{
-		return m_register.getVariable(name);
+		return m_register(name);
 	}
 
 	bool EntityData::hasVariable(const std::string& name) const

@@ -15,12 +15,13 @@
 //Profiler inspired by:
 //https://github.com/grant-zietsman/rapid-profile/blob/master/rapid-profile.hpp
 
+/*
 #define CIRCE_STRING_ID(text) std::hash<std::string>{}(text)
 #define CIRCE_INFO(text) {Circe::log.print("INFO", __FILE__, __LINE__, text);}
 #define CIRCE_WARNING(text) {Circe::log.print("WARNING", __FILE__, __LINE__, text);}
 #define CIRCE_ERROR(text) {Circe::log.print("ERROR", __FILE__, __LINE__, text);}
 #define CIRCE_PRINT(text) {Circe::log.print(text);}
-
+*/
 
 #define CIRCE_MARK {Circe::Debug::mark(__FILE__, __LINE__);}
 #define CIRCE_BREAK {Circe::Debug::breakPoint(__FILE__, __LINE__);}

@@ -2,17 +2,19 @@ NAME=Elysium
 
 IDIR =../include
 CC=g++ 
-CFLAGS= -std=c++17 -g -I$(IDIR)
+DEBUG_FLAG=-g
+PROF_FLAG=-pg
+CFLAGS= -std=c++17 $(DEBUG_FLAG) $(PROF_FLAG)  -I$(IDIR)
 
 ODIR=obj
-SUBDIR = Game Rendering Physics
+SUBDIR = Game Rendering Physics Carina
 
 #Look in current directory for internal libraries
 LIBFLAG=$(wildcard *.dll)
 
 #Add the external libraries
-LIBFLAG += -L../lib
-LIBFLAG += -lm -lGLEW -lGLU -lGL -lSDL2 -lassimp
+LIBFLAG += -L/usr/lib
+LIBFLAG += -lm -lCirce -lGLEW -lGLU -lGL -lSDL2 -lassimp
 
 DEPS = $(wildcard *.h $(IDIR)/*.h)\
        $(wildcard *.h $(foreach fd, $(SUBDIR), $(IDIR)/$(fd)/*.h))

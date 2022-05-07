@@ -58,7 +58,7 @@ namespace Elysium
 			}
 
 		private:
-			Register m_register;
+			Circe::Register m_register;
 			std::vector<TexturedMesh> m_tMeshes;
 
 			friend class ModelLoader;

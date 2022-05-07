@@ -6,7 +6,7 @@ namespace Physics
 									   const Vec& dimension,
 									   Transform transform,
 									   std::vector<Vec>& collisionPoints)
-	: M_inv(1.0/mass), m_transform(transform), omega(0), 
+	: M_inv(1.0/mass), m_transform(transform), omega(0), m_size(dimension),
 	  m_collider(collisionPoints, transform)
 	{
 		setInertia(dimension);
@@ -56,6 +56,11 @@ namespace Physics
 		m_transform->rotate(omega*dt);
 	}
 	
+	void PhysicsComponent::update(Elysium::Entity& entity, const Real dt)
+	{
+		entity->setVariable("velocity", v);
+		entity->setVariable("mass", 1.0/M_inv);
+	}
 
 	void PhysicsComponent::addForceGenerator
 								(std::shared_ptr<ForceGenerator> force)
@@ -115,6 +120,16 @@ namespace Physics
 	Transform PhysicsComponent::getTransform() const
 	{
 		return m_transform;
+	}
+
+	Vec PhysicsComponent::getSize() const
+	{
+		return m_size;
+	}
+
+	void PhysicsComponent::setSize(const Vec& size)
+	{
+		m_size = size;
 	}
 
 	Collider PhysicsComponent::getCollider() const

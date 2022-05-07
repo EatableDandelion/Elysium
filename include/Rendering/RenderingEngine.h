@@ -11,7 +11,7 @@
 #include "Game/Camera.h"
 #include "Rendering/RenderingPass.h"
 #include "Game/Input.h"
-#include "Game/Event.h"
+#include "Circe/Event.h"
 
 namespace Elysium
 {

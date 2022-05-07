@@ -1,19 +1,37 @@
 #pragma once
+
 #include <unordered_map>
 #include <typeinfo>
 #include <typeindex>
 #include <iostream>
 #include <Circe/Circe.h>
+#include "Game/GameInterface.h"
 #include "Rendering/RenderingEngine.h"
-#include "Game/Register.h"
 
 namespace Elysium
 {
-	typedef unsigned int EntityID;
 
-	class Context;
+	typedef unsigned int EntityID;
+	//typedef std::type_index ComponentID;
 	class EntityData;
 	using Entity = std::shared_ptr<EntityData>;
+
+	using ComponentID = std::uint8_t;
+	const ComponentID MAX_COMPONENTS = 256;
+	using Signature = std::bitset<ComponentID>;
+
+
+	template<class T>
+	ComponentID getComponentID()
+	{
+		return std::type_index(typeid(T));
+	}
+
+	template<class T>
+	bool isComponentID(const ComponentID id)
+	{
+		return id == getComponentID<T>();
+	}
 
 	class Component
 	{
@@ -34,7 +52,7 @@ namespace Elysium
 	class EntityData
 	{
 		public:
-			EntityData();
+			EntityData(const std::shared_ptr<GameInterface> comm);
 		
 			~EntityData();
 
@@ -46,22 +64,45 @@ namespace Elysium
 			template<class T, typename... Args>
 			void addComponent(Args&&... args)
 			{
-				m_components[getComponentId<T>()] = 
+				m_components[getComponentID<T>()] = 
 					std::make_shared<T>(std::forward<Args>(args)...);
+
+				std::shared_ptr<GameInterface> game =m_gameInterface.lock();
+				if(game)
+				{
+					game->onComponentAdded(id, getComponentID<T>());
+				}
 			}
 			
+			template<class T>
+			void removeComponent()
+			{
+				removeComponent(getComponentID<T>());
+			}
+
+			void removeComponent(const std::type_index componentID)
+			{
+				std::shared_ptr<GameInterface> game =m_gameInterface.lock();
+				if(game && m_components.count(componentID))
+				{
+					game->onComponentRemoved(id, componentID);
+				}
+
+				m_components.erase(componentID);
+			}
+
 			template<class T>
 			std::shared_ptr<T> getComponent()
 			{
 				std::shared_ptr<Component> res = 
-							m_components[getComponentId<T>()];
+							m_components[getComponentID<T>()];
 				return std::dynamic_pointer_cast<T>(res);
 			}
 
 			template<typename T>
 			bool hasComponent()
 			{
-				return m_components.find(getComponentId<T>()) != 
+				return m_components.find(getComponentID<T>()) != 
 								m_components.end();
 			}
 		
@@ -80,26 +121,25 @@ namespace Elysium
 			bool hasVariable(const std::string& name) const;
 
 		private:
-			Register m_register;
+			Circe::Register m_register;
 			static EntityID allid;			
 			const EntityID id;
-			map<std::type_index, std::shared_ptr<Component>> m_components;	
+			map<ComponentID, std::shared_ptr<Component>> m_components;	
 			Transform m_transform;
-	
-			template<class T>
-			std::type_index getComponentId()
-			{
-				return std::type_index(typeid(T));
-			}
+			std::weak_ptr<GameInterface> m_gameInterface;
 	};
 
-	class World;
 
 	class System
 	{
 		public:
 			virtual void update(const Real dt, 
-								World& world,
-								Context& context) = 0;
+								std::shared_ptr<GameInterface> context) = 0;
+
+			virtual void onComponentAdded(Entity entity, 
+										  const ComponentID id){};
+
+			virtual void onComponentRemoved(Entity entity, 
+										  	const ComponentID id){};
 	};
 }

@@ -23,7 +23,7 @@ namespace Elysium
 
 	void GameLoop::run()
 	{
-		m_game->init(m_world, m_context);
+		m_game->init();
 
 		double SEC_PER_FRAME = 1.0/60.0;
 		m_running = true;
@@ -34,7 +34,7 @@ namespace Elysium
 		startTime = previous;
 		sysPrevious = previous;
 
-		while(!m_context.getInput()->isTerminated())
+		while(!m_game->isTerminated() && totalTime < 10.0)
 		{	
 
 			current = Time::clock::now();
@@ -50,7 +50,7 @@ namespace Elysium
 			std::cout << "\r" << "Execution time: " << elapsed 
 					  << " s           " 			<< std::flush;
 		
-			m_context.getInput()->poll();
+//			m_context.getInput()->poll();
 
 			while(lag >= SEC_PER_FRAME)
 			{
@@ -58,12 +58,12 @@ namespace Elysium
 				elapsed = Time::duration(sysCurrent - sysPrevious).count();
 				sysPrevious = sysCurrent;
 
-				m_game->updateAll(elapsed, m_world, m_context);
+				m_game->updateAll(elapsed);
 
 				lag -= SEC_PER_FRAME;
 			}
 
-			m_game->getRenderer()->draw();
+			m_game->draw();
 
 		}		
 		m_running = false;

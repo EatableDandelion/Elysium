@@ -26,9 +26,12 @@ namespace Physics
 			
 			void update(const Real dt, const Vec3& loads);
 
+			virtual void update(Elysium::Entity& entity, const Real dt);
+
 			void addForceGenerator(std::shared_ptr<ForceGenerator> force);
 
-			std::vector<std::shared_ptr<ForceGenerator>> getForceGenerators();
+			std::vector<std::shared_ptr<ForceGenerator>> 
+													getForceGenerators();
 
 			void setInertia(const Vec2 dimension);
 
@@ -48,6 +51,10 @@ namespace Physics
 
 			Transform getTransform() const;
 
+			Vec getSize() const;
+
+			void setSize(const Vec& size);
+
 			Collider getCollider() const;
 
 		private:
@@ -56,9 +63,9 @@ namespace Physics
 			Vec3 m_loads;		//Force and moment;
 			Real M_inv;			
 			Real I_inv;
-			
-			Collider m_collider;
+			Vec m_size;
 
+			Collider m_collider;
 			Transform m_transform;
 			std::vector<std::shared_ptr<ForceGenerator>> m_forces;
 	};

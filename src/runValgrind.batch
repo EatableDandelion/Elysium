@@ -1,0 +1,4 @@
+valgrind --leak-check=full \
+		 --track-origins=yes\
+		 --log-file=valgrind_out.txt \
+		 ./Elysium.exe

@@ -5,7 +5,7 @@
 #include <math.h>
 #include <memory>
 #include <vector>
-#include "Profile.h"
+//#include "Profile.h"
 
 namespace Circe
 {	
@@ -695,298 +695,56 @@ namespace Circe
 	struct Mat
 	{	
 		public:
-			Mat()
-			{}
+			Mat();
 
-			Mat(const std::size_t newM, const std::size_t newN)
-			{	
-				init(newM, newN);	
-			}
+			Mat(const std::size_t newM, const std::size_t newN);
 		
-			void init(const std::size_t newM, const std::size_t newN)
-			{
-				M = newM;
-				N = newN;
-				data.clear();
-				for(int k = 0; k<M*N; k++)
-					data.push_back(0.0);
-			}
+			void init(const std::size_t newM, const std::size_t newN);
 
 			Mat(const std::size_t M, const std::size_t N,
-				const std::initializer_list<Real>& values)
-			{
-				init(M,N);
-				std::size_t k = 0;
-				for(Real f : values)
-				{
-					data[k] = f;
-					k++;
-				}
+				const std::initializer_list<Real>& values);
 
-			}
-
-			Mat(const std::initializer_list<Mat>& values)
-			{
-				for(Mat m : values)
-				{
-					M  = max(M,m.M);
-					N += m.N;
-				}
-
-				init(M,N);
-
-				int j0 = 0;
-				for(Mat m : values)
-				{
-					for(int j = 0; j<m.N; j++)
-					{
-						for(int i = 0; i<m.M; i++)
-						{
-							(*this)(i,j0) = m(i,j);
-						}
-						j0++;
-					}
-				}
-			}
+			Mat(const std::initializer_list<Mat>& values);
 			
+			Mat& operator=(const Mat& m);
 			
-			Mat& operator=(const Mat& m)
-			{
-				init(m.M, m.N);
-				data = m.data;	
-				return *this;
-			}
-			
-		
 			//Matrix multiplication to matrix
-			Mat operator*(const Mat& m) const
-			{
-				assert(N == m.M);
-
-				Mat result(M,m.N);
-				for(int i = 0; i<M; ++i)
-				{
-					for(int j = 0; j<m.N; ++j)
-					{
-						Real value = (Real)0.0;
-						for(int k=0;k<N; ++k)
-						{
-							value+=(*this)(i,k)*m(k,j);
-						}
-						result(i,j)=value;
-					}
-				}	
-				return result;
-			}
+			Mat operator*(const Mat& m) const;
 				
-			Mat transposeMult(const Mat& m) const
-			{
-				assert(M == m.M);
-
-				Mat result(N,m.N);
-				for(int i = 0; i<N; ++i)
-				{
-					for(int j = 0; j<m.N; ++j)
-					{
-						Real value = (Real)0.0;
-						for(int k=0;k<M; ++k)
-						{
-							value+=(*this)(k,i)*m(k,j);
-						}
-						result(i,j)=value;
-					}
-				}	
-				return result;
-			}
+			Mat transposeMult(const Mat& m) const;
 			
-			Mat multTranspose(const Mat& m) const
-			{
-				assert(N == m.N);
-
-				Mat result(M,m.M);
-				for(int i = 0; i<M; ++i)
-				{
-					for(int j = 0; j<m.M; ++j)
-					{
-						Real value = (Real)0.0;
-						for(int k=0;k<N; ++k)
-						{
-							value+=(*this)(i,k)*m(j,k);
-						}
-						result(i,j)=value;
-					}
-				}	
-				return result;
-			}	
+			Mat multTranspose(const Mat& m) const;
 
 			//Get the matrix multiplied by a scalar
-			Mat operator*(const Real& f) const
-			{
-				Mat result(M,N);
-				for(int k = 0; k<M*N; k++)
-				{
-					result.data[k] = data[k]*f;
-				}	
-				return result;	
-			}
+			Mat operator*(const Real& f) const;
 
-			Mat operator/(const Real& f) const
-			{
-				Mat result(M,N);
-				for(int k = 0; k<M*N; k++)
-				{
-					result.data[k] = data[k]/f;
-				}	
-				return result;	
-			}
+			Mat operator/(const Real& f) const;
 			
-			void operator+=(const Mat& m)
-			{
-				assert(M == m.M && N == m.N);
-				for(int k = 0; k<M*N; k++)
-				{
-					data[k]+=m.data[k];
-				}	
-			}
+			void operator+=(const Mat& m);
 			
-			Mat operator+(const Mat& m) const
-			{
-				assert(M == m.M && N == m.N);
-				Mat result(M,N);
-				for(int k = 0; k<M*N; k++)
-				{
-					result.data[k] = data[k] + m.data[k];
-				}	
-				return result;	
-			}
+			Mat operator+(const Mat& m) const;
 				
-			Mat operator-(const Mat& m) const
-			{
-				assert(M == m.M && N == m.N);
-				Mat result(M,N);
-				for(int k = 0; k<M*N; k++)
-				{
-					result.data[k] = data[k] - m.data[k];
-				}	
-				return result;	
-			}
+			Mat operator-(const Mat& m) const;
 
-			void operator-=(const Mat& m)
-			{
-				assert(M == m.M && N == m.N);
-				for(int k = 0; k<M*N; k++)
-				{
-					data[k]-=m.data[k];
-				}	
-			}
+			void operator-=(const Mat& m);
 			
 			//Multiply by a scalar
-			void operator*=(const Real& f)
-			{
-				for(int k = 0; k<M*N; k++)
-				{
-					data[k]*=f;
-				}
-			}
+			void operator*=(const Real& f);
 
 			/** Solve the LU factorization of Ax = b with b = this */
-			Mat operator/(const Mat& A)
-			{
-				assert(A.M == M);
+			Mat operator/(const Mat& A);
 
-				if(A.M == A.N)
-				{
-					return solveLU(A);
-				}
-
-				if(A.M > A.N)
-				{
-					return (A.transposeMult(*this))*
-								solveLU(A.transposeMult(A));
-				}
-				else
-				{
-					return A.transposeMult(*this)*
-								solveLU(A.multTranspose(A));
-				}
-			}
-
-			Mat solveLU(const Mat& A)
-			{
-				assert(M == A.M && M == A.N);
-
-				Mat LU(M,M);
-				double sum = 0.0;
-
-				for(int i = 0; i<M; i++)
-				{
-					for(int j = i; j<M; j++)
-					{
-						sum = 0.0;
-						for(int k = 0;k<i;k++)
-						{
-							sum += LU(i,k)*LU(k,j);
-						}
-						LU(i,j)=A(i,j)-sum;
-					}
-					for(int j = i+1; j<M; j++)
-					{
-						sum = 0.0;
-						for(int k = 0; k<i; k++)
-						{
-							sum += LU(j,k)*LU(k,i);
-						}
-						LU(j,i)=(A(j,i)-sum)/LU(i,i);
-					}
-				}
-				
-				Mat y(M,1);
-				for(int i = 0; i<M; i++)
-				{
-					sum = 0.0;
-					for(int k = 0;k<i;k++)
-					{
-						sum+=LU(i,k)*y(k);
-					}
-					y(i) = (*this)(i)-sum;
-				}
-
-				Mat x(M,1);
-				for(int i = M-1;i>=0;i--)
-				{
-					sum=0.0;
-					for(int k = i+1;k<M; k++)
-					{
-						sum+=LU(i,k)*x(k);
-					}
-					x(i) = (y(i)-sum)/LU(i,i);
-				}
-				return x;
-			}
+			Mat solveLU(const Mat& A);
 					
 			//Get the coefficient at row i and column j
-			Real operator()(const int& i, const int& j = 0) const
-			{
-				assert(i<M && j<N);
-				return data[i*N+j];
-			}
+			Real operator()(const int& i, const int& j = 0) const;
 			
 			//Set the coefficient at row i and column j
-			Real& operator()(const int& i, const int& j = 0)
-			{
-				assert(i<M && j<N);
-				return data[i*N+j];
-			}
+			Real& operator()(const int& i, const int& j = 0);
 
-			std::size_t getNbRows() const
-			{
-				return M;
-			}
+			std::size_t getNbRows() const;
 			
-			std::size_t getNbCols() const
-			{
-				return N;
-			}
+			std::size_t getNbCols() const;
 			
 		private:
 			std::vector<Real> data;
@@ -1022,71 +780,29 @@ namespace Circe
 	struct Complex
 	{
 		public:
-			inline Complex(const Real& angle):c(cos(angle)), s(sin(angle))
-			{}
+			Complex(const Real& angle);
 			
-			inline Complex(const Real& real, const Real& imaginary):
-							c(real), s(imaginary)
-			{}
+			Complex(const Real& real, const Real& imaginary);
 	
-			inline	Complex(const Mat& m):Complex(m(0,0), m(0,1))
-			{}
+			Complex(const Mat& m);
 
-			inline Real getAngle() const
-			{
-				return atan2(s,c);
-			}
+			Real getAngle() const;
 			
-			inline Complex operator*(const Complex& q) const
-			{
-				Real a=c;Real b=s;
-				Real c=q.c;Real d=q.s;
-				return Complex(a*c-b*d, b*c+a*d);
-			}
+			Complex operator*(const Complex& q) const;
 			
-			inline Complex operator=(const Complex& q)
-			{
-				c=q.c;
-				s=q.s;
-				return *this;
-			}
+			Complex operator=(const Complex& q);
 			
-			inline Real length() const
-			{
-				return sqrt(c*c+s*s);
-			}
+			Real length() const;
 			
-			inline Complex normalize()
-			{
-				Real length = (*this).length();
-				c/=length;
-				s/=length;
-				return *this;
-			}
+			Complex normalize();
 			
-			inline Complex conjugate()
-			{
-				s*=-(Real)(1.0);
-				return *this;
-			}
+			Complex conjugate();
 			
-			inline Real getReal() const
-			{
-				return c;
-			}
+			Real getReal() const;
 			
-			inline Real getImaginary() const
-			{
-				return s;
-			}
+			Real getImaginary() const;
 			
-			inline void addAngle(const Real& dtheta)
-			{
-				Complex q(dtheta);
-				Real ctemp = c*q.c - s*q.s;
-				s = c*q.s + s*q.c;
-				c=ctemp;
-			}
+			void addAngle(const Real& dtheta);
 	
 		private:
 			Real c,s;
@@ -1096,297 +812,58 @@ namespace Circe
 	class Quaternion
 	{
 		public:
-			inline Quaternion():w((Real)1.0), x(0.0), y(0.0), z(0.0)
-			{}
+			Quaternion();
 			
-			inline Quaternion(const Real& w, const Real& x, 
-							  const Real& y, const Real& z):
-								w(w), x(x), y(y), z(z)
-			{}
+			Quaternion(const Real& w, const Real& x, 
+							  const Real& y, const Real& z);
 			
-			inline Quaternion(const Real& roll, const Real& pitch, 
-								const Real& yaw)
-			{
-				Real cy = cos(yaw*0.5);
-				Real sy = sin(yaw*0.5);
-				Real cp = cos(pitch*0.5);
-				Real sp = sin(pitch*0.5);
-				Real cr = cos(roll*0.5);
-				Real sr = sin(roll*0.5);
-				
-				w = cy*cp*cr+sy*sp*sr;
-				x = cy*cp*sr-sy*sp*cr;
-				y = sy*cp*sr+cy*sp*cr;
-				z = sy*cp*cr-cy*sp*sr;
-				
-				//Source: Wikipedia, conversion between 
-				// quaternion and Euler angles
-			}
+			Quaternion(const Real& roll, const Real& pitch, 
+								const Real& yaw);
 	
-			inline Quaternion(const Mat& m)
-			{
-				Real trace = m(0, 0) + m(1, 1) + m(2, 2);
-				
-				if(trace > 0)
-				{
-					Real s = 0.5 / (Real)std::sqrt(trace+ 1.0);
-					w = 0.25 / s;
-					x = (m(1, 2) - m(2, 1)) * s;
-					y = (m(2, 0) - m(0, 2)) * s;
-					z = (m(0, 1) - m(1, 0)) * s;
-				}
-				else
-				{
-					if(m(0, 0) > m(1, 1) && m(0, 0) 
-							> m(2, 2))
-					{
-						Real s = 2.0f * (Real)std::sqrt(1.0f + m(0, 0)
-							   		- m(1, 1) - m(2, 2));
-						w = (m(1, 2) - m(2, 1)) / s;
-						x = 0.25f * s;
-						y = (m(1, 0) + m(0, 1)) / s;
-						z = (m(2, 0) + m(0, 2)) / s;
-					}
-					else if(m(1, 1) > m(2, 2))
-					{
-						Real s = 2.0f * (Real)std::sqrt(1.0f + m(1, 1)
-							   	- m(0, 0) - m(2, 2));
-						w = (m(2, 0) - m(0, 2)) / s;
-						x = (m(1, 0) + m(0, 1)) / s;
-						y = 0.25f * s;
-						z = (m(2, 1) + m(1, 2)) / s;
-					}
-					else
-					{
-						Real s = 2.0f * (Real)std::sqrt(1.0f + m(2, 2)
-							   	- m(0, 0) - m(1, 1));
-						w = (m(0, 1) - m(1, 0) ) / s;
-						x = (m(2, 0) + m(0, 2) ) / s;
-						y = (m(1, 2) + m(2, 1) ) / s;
-						z = 0.25f * s;
-					}
-				}
+			Quaternion(const Mat& m);
 
-				Real length = -(Real)std::sqrt(x*x + y*y + z*z + w*w);
-				x /= length;
-				y /= length;
-				z /= length;
-				w /= length;
-				
-			}
-
-			inline Quaternion operator=(const Quaternion& q)
-			{
-				w=q.w;
-				x=q.x;
-				y=q.y;
-				z=q.z;
-				return *this;
-			}
+			Quaternion operator=(const Quaternion& q);
 			
-			inline Quaternion operator*(const Quaternion& q) const
-			{
-				return Quaternion(
-					w*q.w - x*q.x - y*q.y - z*q.z, //w
-					w*q.x + x*q.w + y*q.z - z*q.y, //x
-					w*q.y - x*q.z + y*q.w + z*q.x, //y
-					w*q.z + x*q.y - y*q.x + z*q.w  //z
-				);
-			}
+			Quaternion operator*(const Quaternion& q) const;
 			
-			inline void operator*=(const Quaternion& q)
-			{
-				Real w0 = w*q.w - x*q.x - y*q.y - z*q.z;
-				Real x0 = w*q.x + x*q.w + y*q.z - z*q.y;
-				Real y0 = w*q.y - x*q.z + y*q.w + z*q.x;
-				Real z0 = w*q.z + x*q.y - y*q.x + z*q.w;
-				w = w0;
-				x = x0;
-				y = y0;
-				z = z0;
-			}
-			
-			inline void addAngle(const Real& roll, const Real& pitch, 
-								 const Real& yaw)
-			{
-				
-				Quaternion q = (*this)*Quaternion(0.0, 
-												  -roll*0.5, 
-												  -pitch*0.5, 
-												  -yaw*0.5);
-				w+=q.w;
-				x+=q.x;
-				y+=q.y;
-				z+=q.z;
+			void operator*=(const Quaternion& q);
 						
-				normalize();
-			}
+			void addAngle(const Real& roll, const Real& pitch, 
+								 const Real& yaw);
+						
+			Real length() const;
+						
+			Quaternion normalize();
+						
+			Quaternion conjugate();
+						
+			Quaternion getConjugate() const;
+						
+			Vec<2> rotate(const Vec<2>& v2) const;
 			
-			inline Real length() const
-			{
-				return sqrt(w*w+x*x+y*y+z*z);
-			}
+			Vec<3> rotate(const Vec<3>& v2) const;
+						
+			Vec<2> rotateInv(const Vec<2>& v2) const;
+		
+			Vec<3> rotateInv(const Vec<3>& v2) const;
 			
-			inline Quaternion normalize()
-			{
-				Real length = (*this).length();
-				w/=length;
-				x/=length;
-				y/=length;
-				z/=length;
-
-				return *this;
-			}
-			
-			inline Quaternion conjugate()
-			{
-				x*=-1.0;
-				y*=-1.0;
-				z*=-1.0;
-
-				return *this;
-			}
-			
-			inline Quaternion getConjugate() const
-			{
-				return Quaternion(w, -x, -y, -z);
-			}
-			
-			Vec<2> rotate(const Vec<2>& v2) const
-			{
-				Vec<3> r = rotate(Vec<3>(v2(0), v2(1), 0.0));
-				return Vec<2>(r(0), r(1));
-			}
-
-			Vec<3> rotate(const Vec<3>& v2) const
-			{
-				if(v2.dot(v2) < 1e-10) return Vec<3>(v2(0),v2(1),v2(2));
-				Quaternion v((Real)0.0, v2(0), v2(1), v2(2));
-				Quaternion p(*this);
-				p.normalize();
-				Quaternion pConj=p.getConjugate();
-				Quaternion result = p*v*pConj;
-				Vec<3> v3;
-				v3(0)=result.getX();
-				v3(1)=result.getY();
-				v3(2)=result.getZ();
-				return v3;
-			}
-			
-			Vec<2> rotateInv(const Vec<2>& v2) const
-			{
-				Vec<3> r = rotateInv(Vec<3>(v2(0), v2(1), 0.0));
-				return Vec<2>(r(0), r(1));
-			}
-
-			Vec<3> rotateInv(const Vec<3>& v2) const
-			{
-				if(v2.dot(v2) < 1e-10) return Vec<3>(v2(0),v2(1),v2(2));
-				Quaternion v((Real)0.0, v2(0), v2(1), v2(2));
-				Quaternion p(*this);
-				p.normalize();
-				Quaternion pConj=p.getConjugate();
-				Quaternion result = pConj*v*p;
-				Vec<3> v3;
-				v3(0)=result.getX();
-				v3(1)=result.getY();
-				v3(2)=result.getZ();
-				return v3;
-			}
-
 			/** https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles  */
-			Vec<3> toEulerAngle() const
-			{
-				Real sinr_cosp = 2.0*(w*x+y*z);
-				Real cosr_cosp = 1.0-2.0*(x*x+y*y);
-				Real roll = (Real)(std::atan2(sinr_cosp, cosr_cosp));
-
-				Real sinp = 2.0*(w*y-z*x);
-				Real pitch = std::asin(sinp);
-				if(std::abs(sinp) >= 1)
-					pitch = std::copysign(3.14159/2.0, sinp);
-
-				Real siny_cosp = 2.0*(w*z+x*y);
-				Real cosy_cosp = 1.0-2.0*(y*y+z*z);
-				Real yaw = (Real)(std::atan2(siny_cosp, cosy_cosp));
-
-				return Vec<3>(roll, pitch, yaw);
-			}
-
-			Real angleWith(const Quaternion& other)
-			{
-				Vec<3> v1 = rotate(Vec<3>(1,0,0)); 
-				Vec<3> v2 = other.rotate(Vec<3>(1,0,0)); 
-				Vec<3> v3 = cross(v1,v2);
+			Vec<3> toEulerAngle() const;
 			
-				if(dot(v3,Vec<3>(0,0,1)) > 0)
-					return -std::acos(dot(v1,v2));
+			Real angleWith(const Quaternion& other);
+			
+			void lookAt(const Vec<2>& lookAt);
+			
+			void lookAt(const Vec<3>& lookAt, const Vec<3>& up0);
+			
+			Real getW() const;
+						
+			Real getX() const;
+						
+			Real getY() const;
+						
+			Real getZ() const;
 				
-				return std::acos(dot(v1,v2));
-			}
-
-			void lookAt(const Vec<2>& lookAt)
-			{
-				Vec<2> fwd = Circe::normalize(lookAt);
-
-				Mat m(3,3);
-
-				m(0,0) = fwd(0);
-				m(1,0) = fwd(1);
-				m(0,1) = -fwd(1);
-				m(1,1) = fwd(0);
-				m(2,2) = 1.0;
-
-				Quaternion q(m);
-
-				w = q.w;
-				x = q.x;
-				y = q.y;
-				z = q.z;
-			}
-
-			void lookAt(const Vec<3>& lookAt, const Vec<3>& up0)
-			{
-				Vec<3> fwd = Circe::normalize(lookAt);
-				Vec<3> right = Circe::normalize(cross(up0, fwd));
-				Vec<3> up = cross(fwd, right);
-
-				Mat m(3,3);
-				for(int i = 0; i<3; i++)
-				{
-					m(i,0) = fwd(i);
-					m(i,1) = right(i);
-					m(i,2) = up(i);
-				}
-
-				Quaternion q(m);
-
-				w = q.w;
-				x = q.x;
-				y = q.y;
-				z = q.z;
-			}
-
-			inline Real getW() const
-			{
-				return w;
-			}
-			
-			inline Real getX() const
-			{
-				return x;
-			}
-			
-			inline Real getY() const
-			{
-				return y;
-			}
-			
-			inline Real getZ() const
-			{
-				return z;
-			}
-	
 		private:
 			Real x,y,z,w;
 	};
@@ -1604,7 +1081,7 @@ namespace Circe
 	class Trans
 	{
 		public:
-			inline Trans(const Vec<N>& position0 = Vec<N>(),
+			Trans(const Vec<N>& position0 = Vec<N>(),
 					   const Quaternion& rotation = Quaternion(), 
 					   const Vec<N>& scale = Vec<N>(1.0)) :
 						position(position0), rotation(rotation),
@@ -1612,14 +1089,14 @@ namespace Circe
 			{}
 
 			
-			inline Trans(const Trans<N>& transform)
+			Trans(const Trans<N>& transform)
 			{
 				position = transform.position;
 				rotation = transform.rotation;
 				scale = transform.scale;
 			}
 			
-			inline Trans<N>& operator=(const Trans<N>& transform)
+			Trans<N>& operator=(const Trans<N>& transform)
 			{	
 				position = transform.position;
 				rotation = transform.rotation;
@@ -1627,73 +1104,73 @@ namespace Circe
 				return *this;
 			}
 
-			inline Vec<N>& getPosition()
+			Vec<N>& getPosition()
 			{
 				return position;
 			}
 			
-			inline Vec<N> getPosition() const
+			Vec<N> getPosition() const
 			{
 				return position;
 			}
 
-			inline void setPosition(const Vec<N>& newPosition)
+			void setPosition(const Vec<N>& newPosition)
 			{				
 				position = newPosition;			
 			}
 			
-			inline Quaternion& getRotation()
+			Quaternion& getRotation()
 			{
 				return rotation;
 			}
 
-			inline Quaternion getRotation() const
+			Quaternion getRotation() const
 			{
 				return rotation;
 			}		
 
-			inline void setRotation(const Quaternion& other)
+			void setRotation(const Quaternion& other)
 			{
 				rotation = other;
 			}
 
-			inline Vec<N>& getScale()
+			Vec<N>& getScale()
 			{
 				return scale;
 			}
 			
-			inline Vec<N> getScale() const
+			Vec<N> getScale() const
 			{
 				return scale;
 			}
 
-			inline void setScale(const Vec<N>& newScale)
+			void setScale(const Vec<N>& newScale)
 			{
 				scale = newScale;
 			}
 			
-			inline void rotate(const Real angle)
+			void rotate(const Real angle)
 			{
 				rotation.addAngle(0.0, 0.0, angle);
 			}
 
-			inline void rotate(const Vec3& eulerAngles)
+			void rotate(const Vec3& eulerAngles)
 			{
 				rotation.addAngle(eulerAngles(0), eulerAngles(1), 
 								eulerAngles(2));
 			}
 			
-			inline void translate(const Vec<N>& v)
+			void translate(const Vec<N>& v)
 			{
 				position += v;
 			}
 			
-			inline void resize(const Real& scaleRatio)
+			void resize(const Real& scaleRatio)
 			{
 				scale*=scaleRatio;
 			}
 			
-			inline Mat getTransformMatrix() const
+			Mat getTransformMatrix() const
 			{
 				Mat res = (positionMatrix(position)) 
 						   * (rotationMatrix(rotation)) 
@@ -1702,7 +1179,7 @@ namespace Circe
 				return res;
 			}
 
-			inline Vec<N> toGlobal(const Vec<N>& vec, const bool translate)
+			Vec<N> toGlobal(const Vec<N>& vec, const bool translate)
 			{
 				Vec<N> res = rotation.rotateInv(vec);
 
@@ -1712,7 +1189,7 @@ namespace Circe
 				return res;
 			}
 
-			inline Vec<N> toLocal(const Vec<N>& vec, const bool translate)
+			Vec<N> toLocal(const Vec<N>& vec, const bool translate)
 			{
 				Vec<N> res = vec;
 
@@ -1724,17 +1201,17 @@ namespace Circe
 				return res;
 			}
 
-			inline Real angleWith(const Trans<N>& other)
+			Real angleWith(const Trans<N>& other)
 			{
 				return rotation.angleWith(other.rotation);
 			}
 
-			inline void lookAt(const Vec<2>& location)
+			void lookAt(const Vec<2>& location)
 			{
 				rotation.lookAt(location-position);
 			}
 			
-			inline void lookAt(const Vec<3>& location)
+			void lookAt(const Vec<3>& location)
 			{
 				rotation.lookAt(location-position, Vec<3>(0,0,1));
 			}
@@ -1743,7 +1220,7 @@ namespace Circe
 			/** Modify the transform such that one end is a location p1 
 			  	and the other end is at location p2 (useful for lines)
 			 */	
-			inline void lineUp(const Vec<N>& p1, const Vec<N>& p2, 
+			void lineUp(const Vec<N>& p1, const Vec<N>& p2, 
 							   const Real scaleFactor = 1.0)
 			{	
 				position = (p1+p2)/2.0;

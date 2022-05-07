@@ -1,6 +1,5 @@
 #pragma once
 #include <Circe/Circe.h>
-#include "Game/Event.h"
 
 
 namespace Elysium
@@ -10,18 +9,18 @@ namespace Elysium
 		public:
 			Mover(const Transform3 transform);
 
-			SharedListener<int> getForwardListener() const;
-			SharedListener<int> getBackwardListener() const;
-			SharedListener<int> getLeftListener() const;
-			SharedListener<int> getRightListener() const;
-			SharedListener<Circe::Vec2> getRotateListener() const;
+			Circe::Listener<int> getForwardListener() const;
+			Circe::Listener<int> getBackwardListener() const;
+			Circe::Listener<int> getLeftListener() const;
+			Circe::Listener<int> getRightListener() const;
+			Circe::Listener<Circe::Vec2> getRotateListener() const;
 
 		private:
 			Transform3 m_transform;
-			SharedListener<int> m_forward;
-			SharedListener<int> m_backward;
-			SharedListener<int> m_left;
-			SharedListener<int> m_right;
-			SharedListener<Circe::Vec2> m_rotate;
+			Circe::Listener<int> m_forward;
+			Circe::Listener<int> m_backward;
+			Circe::Listener<int> m_left;
+			Circe::Listener<int> m_right;
+			Circe::Listener<Circe::Vec2> m_rotate;
 	};
 }

@@ -7,21 +7,36 @@ namespace Elysium
 //Inspired by:
 //https://medium.com/brakulla/signal-slot-implementation-part-1-adb458454f05
 
+	/** How to use:
+	Emitter<int> emitter;
+	std::shared_ptr<Listener<int>> listener = 
+					std::make_shared<Listener<int>>();
+	listener->setCallback([](int input)
+			{
+				std::cout << input << std::endl;
+			});
+	emitter.addListener(listener);
+
+	int a = 10;
+	emitter.broadcast(a);
+	//Prints "10"
+	**/
+
 	template<typename ...Args>
 	using Callback = std::function<void(Args...)>;
 
 	template<typename ...Args>
-	class Listener
+	class ListenerObject
 	{
 		public:
-			Listener(const Listener&) = delete;
-			Listener(Listener&&) = delete;
-			Listener& operator=(const Listener&) = delete;
+			ListenerObject(const ListenerObject&) = delete;
+			ListenerObject(ListenerObject&&) = delete;
+			ListenerObject& operator=(const ListenerObject&) = delete;
 
-			Listener():m_hasCallback(false)
+			ListenerObject():m_hasCallback(false)
 			{}
 				
-			Listener(const Callback<Args...>& callback)
+			ListenerObject(const Callback<Args...>& callback)
 			{
 				setCallback(callback);
 			}
@@ -44,12 +59,12 @@ namespace Elysium
 	};
 
 	template<typename ...Args>
-	using SharedListener = std::shared_ptr<Listener<Args...>>;
+	using Listener = std::shared_ptr<ListenerObject<Args...>>;
 
 	template<typename ...Args>
 	class Emitter
 	{
-		using WeakListener = std::weak_ptr<Listener<Args...>>;
+		using WeakListener = std::weak_ptr<ListenerObject<Args...>>;
 
 		public:
 			Emitter()
@@ -57,10 +72,7 @@ namespace Elysium
 
 			~Emitter()
 			{
-				for(auto it = m_listeners.begin(); it != m_listeners.end();)
-				{
-					it = m_listeners.erase(it);
-				}
+				removeListeners();	
 			}
 
 			void broadcast(const Args... args)
@@ -79,12 +91,12 @@ namespace Elysium
 				}
 			}
 
-			void addListener(const SharedListener<Args...> listener)
+			void addListener(const Listener<Args...> listener)
 			{
 				m_listeners.push_back(WeakListener(listener));
 			}	
 
-			void removeListener(const SharedListener<Args...> listener)
+			void removeListener(const Listener<Args...> listener)
 			{
 				for(auto it = m_listeners.begin(); it != m_listeners.end();)
 				{
@@ -93,6 +105,11 @@ namespace Elysium
 					else
 						++it;
 				}	
+			}
+
+			void removeListeners()
+			{
+				m_listeners.clear();	
 			}
 
 		private:

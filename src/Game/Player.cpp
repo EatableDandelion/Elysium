@@ -5,7 +5,8 @@ namespace Elysium
 	Mover::Mover(const Transform3 transform):
 		m_transform(transform)
 	{
-		m_forward = std::make_shared<Listener<int>>([this](int state)
+		m_forward = std::make_shared<Circe::ListenerObject<int>>
+										([this](int state)
 				{
 					if(state == 1)
 					{
@@ -14,7 +15,8 @@ namespace Elysium
 						m_transform->translate(axis1);
 					}
 				});
-		m_backward = std::make_shared<Listener<int>>([this](int state)
+		m_backward = std::make_shared<Circe::ListenerObject<int>>
+										([this](int state)
 				{
 					if(state == 1)
 					{
@@ -23,7 +25,8 @@ namespace Elysium
 						m_transform->translate(axis1);
 					}
 				});
-		m_left = std::make_shared<Listener<int>>([this](int state)
+		m_left = std::make_shared<Circe::ListenerObject<int>>
+										([this](int state)
 				{
 					if(state == 1)
 					{
@@ -32,14 +35,16 @@ namespace Elysium
 						m_transform->translate(axis1);
 					}
 				});
-		m_right = std::make_shared<Listener<int>>([this](int state)
+		m_right = std::make_shared<Circe::ListenerObject<int>>
+										([this](int state)
 				{
 						Circe::Vec3 axis1(0.1f,0.0f,0.0f);
 						axis1 = m_transform->toGlobal(axis1, false);
 						m_transform->translate(axis1);
 				});	
 		m_rotate = 
-			std::make_shared<Listener<Circe::Vec2>>([this](Circe::Vec2 dx)
+			std::make_shared<Circe::ListenerObject<Circe::Vec2>>
+										([this](Circe::Vec2 dx)
 				{
 					Circe::Vec3 axis1(0.0f,1.0f,0);
 					Circe::Vec3 axis2(1.0f,0.0f,0);
@@ -52,27 +57,27 @@ namespace Elysium
 				});	
 	}
 
-	SharedListener<int> Mover::getForwardListener() const
+	Circe::Listener<int> Mover::getForwardListener() const
 	{
 		return m_forward;
 	}
 
-	SharedListener<int> Mover::getBackwardListener() const
+	Circe::Listener<int> Mover::getBackwardListener() const
 	{
 		return m_backward;
 	}
 
-	SharedListener<int> Mover::getLeftListener() const
+	Circe::Listener<int> Mover::getLeftListener() const
 	{
 		return m_left;
 	}
 
-	SharedListener<int> Mover::getRightListener() const
+	Circe::Listener<int> Mover::getRightListener() const
 	{
 		return m_right;
 	}
 
-	SharedListener<Circe::Vec2> Mover::getRotateListener() const
+	Circe::Listener<Circe::Vec2> Mover::getRotateListener() const
 	{
 		return m_rotate;
 	}

@@ -7,13 +7,14 @@ namespace Elysium
 		glUseProgram(m_program);
 	}
 		
-	void Shader::updateUniforms(const Register& uniformMap)
+	void Shader::updateUniforms(const Circe::Register& uniformMap)
 	{
 		for(auto& pair : m_uniforms)
 		{
 			std::string type = pair.second.type;
 			GLuint location = pair.second.location;
-			std::vector<Real> floatValue = uniformMap(pair.first);
+			std::vector<Real> floatValue = 
+								uniformMap.getVariable(pair.first);
 
 			std::vector<float> value;
 			for(Real real : floatValue)

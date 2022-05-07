@@ -8,8 +8,18 @@ namespace Physics
 	{}
 
 	AABB::AABB(const Vec& center, const Vec& width)
-			: center(center), halfWidth(width*0.5)
-	{}
+			: center(center), mass(0.0)
+	{
+		Real maxWidth = width(0)*1.5;
+		for(int i = 1; i<DIMENSION; i++)
+		{
+			maxWidth = std::max(maxWidth, width(i)*1.5);
+		}
+		for(int i = 0; i<DIMENSION; i++)
+		{
+			halfWidth = maxWidth;
+		}
+	}
 
 	void AABB::refit(const AABB& v1, const AABB& v2)
 	{
@@ -80,6 +90,20 @@ namespace Physics
 	{
 		center = position;
 		cog = position;
+		update();
+	}
+
+	void AABB::setSize(const Vec& width)
+	{
+		Real maxWidth = width(0)*1.5;
+		for(int i = 1; i<DIMENSION; i++)
+		{
+			maxWidth = std::max(maxWidth, width(i)*1.5);
+		}
+		for(int i = 0; i<DIMENSION; i++)
+		{
+			halfWidth = maxWidth;
+		}
 	}
 
 	void AABB::setMargin(const Vec& v)

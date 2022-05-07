@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Circe/Circe.h"
+#include "Circe/BVH.h"
 #include "Game/Debug.h"
 
 /** TODO persistence to warm-start: build simplex with former point 
@@ -12,7 +13,7 @@
 
 namespace Physics
 {
-	struct AABB : public Circe::PrimitiveCollider<AABB>
+	struct AABB : public Circe::PrimitiveVolume<AABB>
 	{
 		AABB();
 
@@ -30,6 +31,8 @@ namespace Physics
 		Real getArea() const;
 
 		void setPosition(const Vec& position);
+		
+		void setSize(const Vec& size);
 
 		void setMargin(const Vec& v);
 
@@ -51,7 +54,7 @@ namespace Physics
 		Real gravityWidth;
 	};
 
-	struct Point : public Circe::PrimitiveCollider<AABB>
+	struct Point : public Circe::PrimitiveVolume<AABB>
 	{
 		Point(const Vec& location);
 
@@ -61,7 +64,7 @@ namespace Physics
 	};
 
 	//https://web.archive.org/web/20090803054252/http://tog.acm.org/resources/GraphicsGems/gems/RayBox.c
-	struct Ray : public Circe::PrimitiveCollider<AABB>
+	struct Ray : public Circe::PrimitiveVolume<AABB>
 	{
 		Ray(const Vec& origin, const Vec& direction);
 
@@ -71,7 +74,7 @@ namespace Physics
 		Vec dir;
 	};
 
-	struct Segment : public Circe::PrimitiveCollider<AABB>
+	struct Segment : public Circe::PrimitiveVolume<AABB>
 	{
 		Segment(const Vec& pStart, const Vec& pEnd);
 

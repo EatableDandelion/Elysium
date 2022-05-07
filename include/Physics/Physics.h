@@ -1,7 +1,8 @@
 #pragma once
+#include <Circe/Circe.h>
+#include <Circe/BVH.h>
 #include "Game/ECS.h"
 #include "Game/World.h"
-#include "Circe/Circe.h"
 #include "Physics/PhysicsComponent.h"
 #include "Physics/Constraint.h"
 #include "Physics/CollisionDetection.h"
@@ -48,12 +49,18 @@ namespace Physics
 			Real l0;
 			Vec m_anchor;
 	};
+
 	class PhysicsEngine : public Elysium::System
 	{
 		public:
+			virtual void onComponentAdded(Elysium::Entity entity, 
+									  	  const Elysium::ComponentID id);
+
+			virtual void onComponentRemoved(Elysium::Entity entity, 
+									  	  const Elysium::ComponentID id);
+
 			virtual void update(const Real dt,
-								Elysium::World& world,
-								Elysium::Context& context);
+						std::shared_ptr<Elysium::GameInterface> context);
 	
 			void addConstraint(const std::shared_ptr<Joint>& joint);
 
@@ -62,5 +69,6 @@ namespace Physics
 			std::stack<std::shared_ptr<Joint>> m_contacts;
 			ConstraintSolver m_constraintSolver;
 			CollisionDetector m_detector;
+			Circe::BVH<DIMENSION, Physics::AABB> m_tree;
 	};
 }

@@ -3,7 +3,6 @@
 #include <ctime>
 #include <cstdlib>
 #include <Circe/Circe.h>
-#include <Circe/BVH.h>
 #include "Game/GameLoop.h"
 #include "Rendering/Display.h"
 #include "Rendering/Shader.h"
@@ -15,7 +14,6 @@
 #include "Rendering/Lights.h"
 #include "Rendering/Assets.h"
 #include "Rendering/RenderingEngine.h"
-#include "Game/Event.h"
 #include "Game/Player.h"
 #include "Game/Input.h"
 #include "Game/Game.h"
@@ -30,9 +28,9 @@ using namespace Elysium;
 class TestGame : public Elysium::Game
 {
 	public:
-		virtual void init(World& world, Context& context);
+		virtual void init(std::shared_ptr<Context> context);
 
-		virtual void update(const Real dt, World& world, Context& context);
+		virtual void update(const Real dt,std::shared_ptr<Context> context);
 
 	private:
 		std::shared_ptr<Mover> mover;

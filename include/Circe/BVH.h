@@ -3,23 +3,46 @@
 #include <memory>
 #include <vector>
 #include <stack>
+#include <map>
+#include <algorithm>
 #include "Math.h"
+#include "Utils.h"
+#include "Event.h"
 
 namespace Circe
 {
-	struct BroadContact
+	struct Intersection
 	{
 		unsigned int id1;	
 		unsigned int id2;	
 	};
 
 	template<typename C>
-	struct PrimitiveCollider
+	class PrimitiveVolume
 	{
-		virtual bool intersects(const C& other) const = 0;
+		public:
+			virtual bool intersects(const C& other) const = 0;
+
+			void update()
+			{
+				if(m_id != -1)
+					m_callback(m_id);
+			}
+
+			void setCallback(const unsigned int id, 
+							 const Callback<unsigned int>& callback)
+			{
+				m_id = id;
+				m_callback = callback;
+			}
+
+		private:
+			unsigned int m_id = -1;
+			Callback<unsigned int> m_callback;
 	};
 
-	template<std::size_t DIMENSION, typename V>
+	/** N is the dimension, V is inherited from PrimitiveVolume **/
+	template<std::size_t N, typename V>
 	class BVH
 	{
 		private:
@@ -42,7 +65,6 @@ namespace Circe
 				}
 			};
 
-
 			struct NodePair
 			{
 				NodePair(std::shared_ptr<Node> node1,
@@ -55,23 +77,270 @@ namespace Circe
 			};
 
 		public:
-			std::shared_ptr<Node> insert(const unsigned int id, 
-										 const Vec<DIMENSION>& position, 
-										 const Vec<DIMENSION>& size,
-										 const Real mass = 0)
+
+			/** 
+			  	Callback insert:
+			  	Insert a node, while choosing the type of volume. The
+			    nodes are auto-updated through an observer pattern
+			**/
+			std::shared_ptr<Node> insert(const unsigned int id,
+				   						 V& volume)	
 			{
 				std::shared_ptr<Node> node = std::make_shared<Node>();
-				node->volume = V(position, size);
+
+				volume.setCallback(id, [this](int id)
+				{
+					update(id);
+				});
+
+				node->volume = volume;
 				node->id = id;
 
-				m_leaves.insert
-				(std::pair<unsigned int, std::shared_ptr<Node>>(id, node));
+				m_leaves.insert(std::pair<unsigned int, 
+										  std::shared_ptr<Node>>(id, node));
+
+				m_ids.push_back(id);
 
 				insert(node);
 
 				return node;
 			}
 		
+			/**
+			  	Low-tech insert:
+			  	Insert a node, with the default volume type. The
+			    nodes should be updated manually. 
+			**/
+			std::shared_ptr<Node> insert(const unsigned int id,
+										 const Vec<N>& position, 
+										 const Vec<N>& size,
+										 const Vec<N>& velocity = Vec<N>(),
+										 const Real mass = 0)
+			{
+				std::shared_ptr<Node> node = std::make_shared<Node>();
+
+				node->volume = V(position, size);
+				node->id = id;
+
+				m_leaves.insert(std::pair<unsigned int, 
+										  std::shared_ptr<Node>>(id, node));
+				m_ids.push_back(id);
+
+				insert(node);
+
+				return node;
+			}
+
+			void remove(const unsigned int id)
+			{
+				if(m_leaves.count(id))
+				{
+					remove(m_leaves[id]);
+					m_leaves.erase(id);
+					m_ids.erase(std::remove(m_ids.begin(), m_ids.end(), id),
+							m_ids.end());
+				}
+			}
+
+			void update(const unsigned int id)
+			{
+				std::shared_ptr<Node> leaf = m_leaves[id];
+				std::shared_ptr<Node> parent=leaf->parent.lock();
+
+				if(parent && !leaf->volume.isInside(parent->volume))
+				{
+					remove(leaf);
+					insert(leaf);	
+				}
+			}
+	
+			void update(const unsigned int id, 
+						const Vec<N>& position,
+						const Vec<N>& size,
+						const Vec<N>& velocity = Vec<N>(), 
+						const Real mass = 0.0)
+			{
+				std::shared_ptr<Node> leaf = m_leaves[id];
+				leaf->volume.setPosition(position);
+				leaf->volume.setSize(size);
+				leaf->volume.setMargin(velocity);
+				leaf->volume.setMass(mass);
+
+				update(id);
+			}		
+
+			std::vector<Intersection> getInternalContacts()
+			{
+				std::vector<Intersection> res;
+				std::stack<NodePair> stack;
+
+				if(!m_root || m_root->isLeaf()) return res;
+
+				stack.push(NodePair(m_root->child1, m_root->child2));
+
+				while(!stack.empty())
+				{
+					NodePair pair = stack.top();
+					stack.pop();
+
+					std::shared_ptr<Node> node1 = pair.node1;
+					std::shared_ptr<Node> node2 = pair.node2;
+
+					if(!node1->volume.intersects(node2->volume))
+						continue;
+
+					if(node1->isLeaf() && node2->isLeaf())
+					{
+						Intersection contact;
+						contact.id1 = node1->id;
+						contact.id2 = node2->id;
+						res.push_back(contact);
+						continue;
+					}
+
+					if(node2->isLeaf() || 
+					  (!node1->isLeaf() && node1->volume.getArea() 
+										  >= node2->volume.getArea()))
+					{
+						stack.push(NodePair(node1->child1, node2));
+						stack.push(NodePair(node1->child2, node2));
+					}
+					else
+					{
+						stack.push(NodePair(node1, node2->child1));
+						stack.push(NodePair(node1, node2->child2));
+					}
+				}
+
+				return res;
+			}
+
+			/** 
+				Get the list of id which intersect the chosen volume.
+			**/
+			std::vector<unsigned int> query
+				(const std::shared_ptr<PrimitiveVolume<V>> volume)
+			{
+				std::vector<unsigned int> result;
+				std::stack<std::shared_ptr<Node>> stack;
+				stack.push(m_root);
+
+				while(!stack.empty())
+				{
+					std::shared_ptr<Node> node = stack.top();
+
+					if(volume->intersects(node->volume))
+					{
+						if(node->isLeaf())
+						{
+							result.push_back(node->id);
+						}
+						else
+						{
+							stack.push(node->child1);
+							stack.push(node->child2);
+						}
+					}
+
+					stack.pop();
+				}
+
+				return result;
+		    }
+
+			/** 
+			  	Barnes Hut gravity: theta goes from 1.5 (inaccurate)
+			    to 0.0 (n^2)
+			 **/
+			Vec<N> getGravity(const unsigned int id, 
+						   const Real theta = 1.0)
+			{
+				Vec<N> position = m_leaves[id]->volume.getCoG();
+
+				std::stack<std::shared_ptr<Node>> stack;
+				stack.push(m_root);
+			
+				Vec<N> force;
+
+				Real ratio;
+				Vec<N> dr;
+				Real mass;
+				while(!stack.empty())
+				{
+					std::shared_ptr<Node> node = stack.top();
+
+					if(node->volume.mass > 0.0)
+					{
+						dr = node->volume.getCoG() - position;
+				      	if(node.isLeaf())
+						{
+							if(node->id != id)
+							{
+								force = force + node->volume.getMass()
+											  * normalize(dr)/dot(dr, dr);
+							}
+							else
+							{
+								mass = node->volume.getMass();
+							}
+						}
+						else
+						{
+							ratio=node->volume.getBarnesHutRatio(dr);
+
+							if(ratio < theta)
+							{
+
+								force = force + node->volume.getMass()
+										  	  * normalize(dr)/dot(dr, dr);
+
+							}
+							else
+							{
+								stack.push(node->child1);	
+								stack.push(node->child2);	
+							}
+						}
+					}
+
+					stack.pop();
+				}
+
+				return force * mass;
+			}
+
+			typename std::vector<unsigned int>::iterator begin()
+			{
+				return m_ids.begin();
+			}
+
+			typename std::vector<unsigned int>::iterator end()
+			{
+				return m_ids.end();
+			}
+
+			void draw()
+			{
+				if(m_root) draw(m_root);
+			}
+
+			void draw(const std::shared_ptr<Node> node)
+			{
+				Vec3 color(0,0,1);
+				if(node->isLeaf()) color = Vec3(1,0,0);
+				node->volume.draw(color);
+				if(!node->isLeaf())
+				{
+					draw(node->child1);
+					draw(node->child2);
+				}
+			}
+
+		private:
+			std::shared_ptr<Node> m_root;
+			std::map<unsigned int, std::shared_ptr<Node>> m_leaves;
+			std::vector<unsigned int> m_ids;
+
 			void insert(const std::shared_ptr<Node> leaf)
 			{
 				/** If the tree is empty */
@@ -114,12 +383,6 @@ namespace Circe
 				
 				/** Refit the tree  */
 				refit(parent);
-			}
-
-			void remove(const unsigned int id)
-			{
-				remove(m_leaves[id]);
-				m_leaves.erase(id);
 			}
 
 			void remove(std::shared_ptr<Node> leaf)
@@ -168,182 +431,6 @@ namespace Circe
 				}
 			}
 
-			void update(const unsigned int id, 
-						const Vec<DIMENSION>& position,
-						const Vec<DIMENSION>& velocity = Vec<DIMENSION>(), 
-						const Real mass = 0.0)
-			{
-				std::shared_ptr<Node> leaf = m_leaves[id];
-				leaf->volume.setPosition(position);
-				leaf->volume.setMargin(velocity);
-				leaf->volume.setMass(mass);
-
-				std::shared_ptr<Node> parent=leaf->parent.lock();
-
-				if(parent && !leaf->volume.isInside(parent->volume))
-				{
-					remove(leaf);
-					insert(leaf);	
-				}
-			}
-			
-			std::vector<BroadContact> findInternalContacts()
-			{
-				std::vector<BroadContact> res;
-				std::stack<NodePair> stack;
-
-				if(!m_root || m_root->isLeaf()) return res;
-
-				stack.push(NodePair(m_root->child1, m_root->child2));
-
-				while(!stack.empty())
-				{
-					NodePair pair = stack.top();
-					stack.pop();
-
-					std::shared_ptr<Node> node1 = pair.node1;
-					std::shared_ptr<Node> node2 = pair.node2;
-
-					if(!node1->volume.intersects(node2->volume))
-						continue;
-
-					if(node1->isLeaf() && node2->isLeaf())
-					{
-						BroadContact contact;
-						contact.id1 = node1->id;
-						contact.id2 = node2->id;
-						res.push_back(contact);
-						continue;
-					}
-
-					if(node2->isLeaf() || 
-					  (!node1->isLeaf() && node1->volume.getArea() 
-										  >= node2->volume.getArea()))
-					{
-						stack.push(NodePair(node1->child1, node2));
-						stack.push(NodePair(node1->child2, node2));
-					}
-					else
-					{
-						stack.push(NodePair(node1, node2->child1));
-						stack.push(NodePair(node1, node2->child2));
-					}
-				}
-
-				return res;
-			}
-
-			std::vector<unsigned int> query
-				(const std::shared_ptr<PrimitiveCollider<V>> volume)
-			{
-				std::vector<unsigned int> result;
-				std::stack<std::shared_ptr<Node>> stack;
-				stack.push(m_root);
-
-				while(!stack.empty())
-				{
-					std::shared_ptr<Node> node = stack.top();
-
-					if(volume->intersects(node->volume))
-					{
-						if(node->isLeaf())
-						{
-							result.push_back(node->id);
-						}
-						else
-						{
-							stack.push(node->child1);
-							stack.push(node->child2);
-						}
-					}
-
-					stack.pop();
-				}
-
-				return result;
-		    }
-
-			/** 
-			  	Barnes Hut gravity: theta goes from 1.5 (inaccurate)
-			    to 0.0 (n^2)
-			 **/
-			Vec<DIMENSION> getGravity(const unsigned int id, 
-						   const Real theta = 1.0)
-			{
-				Vec<DIMENSION> position = m_leaves[id]->volume.getCoG();
-
-				std::stack<std::shared_ptr<Node>> stack;
-				stack.push(m_root);
-			
-				Vec<DIMENSION> force;
-
-				Real ratio;
-				Vec<DIMENSION> dr;
-				Real mass;
-				while(!stack.empty())
-				{
-					std::shared_ptr<Node> node = stack.top();
-
-					if(node->volume.mass > 0.0)
-					{
-						dr = node->volume.getCoG() - position;
-				      	if(node.isLeaf())
-						{
-							if(node->id != id)
-							{
-								force = force + node->volume.getMass()
-											  * normalize(dr)/dot(dr, dr);
-							}
-							else
-							{
-								mass = node->volume.getMass();
-							}
-						}
-						else
-						{
-							ratio=node->volume.getBarnesHutRatio(dr);
-
-							if(ratio < theta)
-							{
-
-								force = force + node->volume.getMass()
-										  	  * normalize(dr)/dot(dr, dr);
-
-							}
-							else
-							{
-								stack.push(node->child1);	
-								stack.push(node->child2);	
-							}
-						}
-					}
-
-					stack.pop();
-				}
-
-				return force * mass;
-			}
-
-			void draw()
-			{
-				if(m_root) draw(m_root);
-			}
-
-			void draw(const std::shared_ptr<Node> node)
-			{
-				Vec3 color(0,0,1);
-				if(node->isLeaf()) color = Vec3(1,0,0);
-				node->volume.draw(color);
-				if(!node->isLeaf())
-				{
-					draw(node->child1);
-					draw(node->child2);
-				}
-			}
-
-		private:
-			std::shared_ptr<Node> m_root;
-			std::map<unsigned int, std::shared_ptr<Node>> m_leaves;
 
 			std::shared_ptr<Node> findBest(const V& newVolume) const
 			{
@@ -384,6 +471,10 @@ namespace Circe
 				return node;
 			}
 
+			/**
+			 	Backpropagate the change in shape or position
+			    of a node.	
+			**/
 			void refit(const std::shared_ptr<Node> startingNode)
 			{
 				std::shared_ptr<Node> parent = startingNode;
@@ -399,299 +490,42 @@ namespace Circe
 			}
 	};
 
-
-/*	struct TestBody
-	{};
-
-	template<typename Body>
-	struct Contact
-	{
-		std::shared_ptr<Body> bodies[2];
-	};
-
-	template<typename Volume, typename Body>
-	class BVHNode : public 
-						std::enable_shared_from_this<BVHNode<Volume,Body>>
+	/* Debug */
+/*	class AABB : public PrimitiveVolume<AABB>
 	{
 		public:
-			BVHNode(const Volume& volume, const std::shared_ptr<Body> body,
-					const std::shared_ptr<BVHNode<Volume, Body>> parent)
-			   :m_parent(parent), m_volume(volume), m_body(body)
-			{}	
+		AABB();
 
-			~BVHNode()
-			{
-				remove();
-			}
+		AABB(const Vec<DIMENSION>& center, const Vec<DIMENSION>& width);
 
-			bool isLeaf() const
-			{
-				return m_body != nullptr;
-			}
+		void refit(const AABB& v1, const AABB& v2);
 
-			unsigned int getContacts(std::vector<Contact<Body>>& contacts, 
-									 unsigned int limit) const
-			{
-				if(isLeaf() || limit == 0) return 0;
+		bool isInside(const AABB& v) const;
 
-				return m_children[0]->getContactsWith(m_children[1], 
-													  contacts, limit);
-			}
+		virtual bool intersects(const AABB& other) const;
 
-			unsigned int getContactsWith(const BVHNode<Volume, Body>& other,
-									 std::vector<Contact<Body>>& contacts,
-									 unsigned int limit) const
-			{
-				if(!overlaps(other) || limit == 0) return 0;
+		Real getUnionArea(const AABB& s1) const;
 
-				if(isLeaf() && other.isLeaf())
-				{
-					Contact<Body> contact;
-					contact.bodies[0] = m_body;
-					contact.bodies[1] = other.m_body;
-					contacts.push_back(contact);
+		Real getArea() const;
 
-					return 1;
-				}
+		void setPosition(const Vec<DIMENSION>& position);
 
-				if(other.isLeaf() || (!isLeaf() && m_volume.getArea() 
-									  >= other.m_volume.getArea()))
-				{
-					unsigned int count = 
-					 m_children[0]->getContactsWith(other,contacts,limit);
+		void setMargin(const Vec<DIMENSION>& v);
 
-					if(limit > count) 
-					{
-						return count + 
-							 m_children[1]->getContactsWith(other, contacts,
-									   						limit - count);
-					}
-					else
-					{
-						return count;
-					}
-				}
-				else
-				{
-					unsigned int count = getContactsWith(
-							other.m_children[0], contacts, limit);
+		Real getBarneHutRatio(const Vec<DIMENSION>& dr) const;
 
-					if(limit > count)
-					{
-						return count + getContactsWith(
-							other.m_children[1], contacts, limit - count);
-					}
-					else
-					{
-						return count;
-					}
-				}
-			}
+		Vec<DIMENSION> getCoG() const;
 
-			bool overlaps(const BVHNode<Volume, Body>& other) const
-			{
-				return m_volume.overlaps(other.m_volume);	
-			}
+		Real getMass() const;
 
-			void insert(std::shared_ptr<Body> body, const Volume& volume)
-			{
-				if(isLeaf())
-				{
-					m_children[0] = std::make_shared<BVHNode<Volume, Body>>
-							(m_volume, m_body, this->shared_from_this());
+		void setMass(const Real m);
 
-					m_children[1] = std::make_shared<BVHNode<Volume, Body>>
-							(volume, body, this->shared_from_this());
-
-					m_body.reset();
-					m_volume.recalculate(m_volume, volume);
-				}
-				else
-				{
-					Real cost0 = m_children[0]->m_volume.getGrowth(volume);
-					Real cost1 = m_children[1]->m_volume.getGrowth(volume);
-
-					if(cost0 < cost1)
-					{
-						m_children[0]->insert(body, volume);
-					}
-					else
-					{
-						m_children[1]->insert(body, volume);
-					}
-				}
-			}
-
-			void remove()
-			{
-				std::shared_ptr<BVHNode<Volume, Body>> parent = 
-						m_parent.lock();
-				if(parent)
-				{
-					std::shared_ptr<BVHNode<Volume, Body>> sibling;
-
-					if(this->shared_from_this() == parent->m_children[0])
-						sibling = parent->m_children[1];
-					else
-						sibling = parent->m_children[0];
-
-					parent->m_volume = sibling->m_volume;
-					parent->m_body = sibling->m_body;
-					parent->m_children[0] = sibling->m_children[0];
-					parent->m_children[1] = sibling->m_children[1];
-
-					sibling->m_parent.reset();
-					sibling->m_children[0].reset();
-					sibling->m_children[1].reset();
-				
-					parent->recalculate();
-				}
-
-				if(m_children[0])
-				{
-					m_children[0]->m_parent.reset();
-				}
-				if(m_children[1])
-				{
-					m_children[1]->m_parent.reset();
-				}
-			}
-
-			void recalculate()
-			{
-				if(!isLeaf())
-				{
-					m_volume.recalculate(m_children[0]->m_volume,
-										 m_children[1]->m_volume);
-				}
-			}
-
-			void getAllVolumes(std::vector<Volume>& volumes) 
-			{
-				int i = 0;
-				if(isLeaf()) i = 1;
-				m_volume.type = i;
-				volumes.push_back(m_volume);
-				if(!isLeaf())
-				{
-					m_children[0]->getAllVolumes(volumes);
-					m_children[1]->getAllVolumes(volumes);
-				}
-			}
-
-		private:
-			Volume m_volume;
-			std::shared_ptr<BVHNode<Volume, Body>> m_children[2];
-			std::shared_ptr<Body> m_body;
-			std::weak_ptr<BVHNode<Volume, Body>> m_parent;
+		Vec<DIMENSION> center;
+		Vec<DIMENSION> halfWidth;
+		Vec<DIMENSION> margin;
+		Real mass;
+		Vec<DIMENSION> cog;
+		Real gravityWidth;
 	};
-
-
-	template<std::size_t N>
-	class BoundingSphere
-	{
-		public:
-			int type;
-
-			BoundingSphere()
-			{}
-
-			BoundingSphere(const Vec<N>& center, const Real& radius)
-				: m_center(center), m_radius(radius)
-			{}
-
-			BoundingSphere(const BoundingSphere<N>& other)
-				: m_center(other.m_center), m_radius(other.m_radius)
-			{}
-
-			BoundingSphere(const BoundingSphere<N>& sphere1,
-						   const BoundingSphere<N>& sphere2)
-			{
-				recalculate(sphere1, sphere2);
-			}
-
-			void recalculate(const BoundingSphere<N>& sphere1,
-						     const BoundingSphere<N>& sphere2)
-			{
-				Vec<N> centerOffset = sphere2.m_center - sphere1.m_center;
-
-				Real d = dot(centerOffset, centerOffset);
-
-				Real dr = sphere2.m_radius - sphere1.m_radius;
-
-				if(dr*dr >= d)
-				{
-					if(sphere1.m_radius > sphere2.m_radius)
-					{
-						m_center = sphere1.m_center;
-						m_radius = sphere1.m_radius;					
-					}
-					else
-					{
-						m_center = sphere2.m_center;
-						m_radius = sphere2.m_radius;
-					}	
-				}
-				else
-				{
-					d = std::sqrt(d);
-					Real r = (d+sphere1.m_radius+sphere2.m_radius)*0.5;
-					m_center = sphere1.m_center;
-					if(d > 0)
-					{
-						m_center = m_center + centerOffset
-									*((r - sphere1.m_radius)/d);
-					}	
-					m_radius = r;
-				}
-			}
-
-			bool overlaps(const BoundingSphere<N>& other) const
-			{
-				Vec<N> diff = (m_center - other.m_center);
-				Real d2 = dot(diff, diff);
-				return d2 < (m_radius+other.m_radius)
-						   *(m_radius+other.m_radius);
-			}
-
-			Real getArea() const
-			{
-				return m_radius*m_radius*3.14159;
-			}
-
-			Real getGrowth(const BoundingSphere<N>& other)
-			{
-				Vec<N> centerOffset = other.m_center - m_center;
-
-				Real d = std::sqrt(dot(centerOffset, centerOffset));
-
-				Real r = (d+m_radius+other.m_radius)*0.5;
-
-				return r*r*3.14159;
-			}
-
-			Vec<N> getPosition() const
-			{
-				return m_center;
-			}
-
-			void setPosition(const Vec<N>& center)
-			{
-				m_center = center;
-			}
-
-			Real getRadius() const
-			{
-				return m_radius;
-			}
-
-			void setRadius(const Real radius)
-			{
-				m_radius = radius;
-			}
-
-		private:
-			Vec<N> m_center;
-			Real m_radius; 
-	};*/
+*/	
 }

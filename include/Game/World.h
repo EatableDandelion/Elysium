@@ -1,27 +1,25 @@
 #pragma once
-#include <map>
-#include <Circe/BVH.h>
 #include "Game/ECS.h"
-#include "Physics/CollisionDetection.h"
 
 namespace Elysium
 {
+	class Context;
+
 	class World
 	{
 		public:
+			void init(const std::shared_ptr<GameInterface> game);
+
 			Entity newEntity();
 
 			void removeEntity(const Entity entity);
 
-			void update(std::shared_ptr<Renderer> renderer, const Real dt);
-
-//			Entity operator()(const EntityID id);
+			void update(const Real dt, std::shared_ptr<Renderer> renderer);
 
 			std::vector<Entity> getEntities() const;
 
 		private:
-			//std::map<EntityID, Entity> m_entities;
 			std::vector<Entity> m_entities;
-			Circe::BVH<DIMENSION, Physics::AABB> m_tree;
+			std::shared_ptr<GameInterface> m_context;
 	};
 }

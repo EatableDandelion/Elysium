@@ -23,8 +23,6 @@ namespace Elysium
 			static double GetTotalTime();
 
 		private:
-			Context m_context;
-			World m_world;
 			std::shared_ptr<Game> m_game;
 			bool m_running;
 			static double totalTime;

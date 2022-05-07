@@ -1,200 +1,119 @@
 #pragma once
 #include <memory>
-#include <vector>
-#include <iostream>
 #include <functional>
 
-namespace Circe{
-	
-	using namespace std;
-	
-	template<class T> class CallbackObserver;
-	template<class T> class ObserverNode;
-	template<class T> class Observable;
-	
-	/*
-	Example 1:
-	
-	Observable<Mat<2>> subject({1.0f, 0.0f,  0.0f, 1.0f});
-
-	shared_ptr<bool> canary=make_shared<bool>();
-	subject.addObserver([](const Mat<2>& f){cout << f << endl;}, canary);
-	
-	subject=Mat<2>({2.0f, 0.0f, 2.0f, 1.0f});
-	
+namespace Circe
+{
+	/**
+	Inspired by:
+	https://medium.com/brakulla/signal-slot-implementation-part-1-adb458454f05
 	*/
+	/** How to use:
+	Emitter<int> emitter;
+	Listener<int> listener = 
+					std::make_shared<ListenerObject<int>>();
+	listener->setCallback([](int input)
+			{
+				std::cout << input << std::endl;
+			});
+	emitter.addListener(listener);
 
-	template<class T>
-	class CallbackObserver
+	int a = 10;
+	emitter.broadcast(a);
+	//Prints "10"
+	**/
+
+	template<typename ...Args>
+	using Callback = std::function<void(Args...)>;
+
+	template<typename ...Args>
+	class ListenerObject
 	{
 		public:
-			CallbackObserver()
+			ListenerObject(const ListenerObject&) = delete;
+			ListenerObject(ListenerObject&&) = delete;
+			ListenerObject& operator=(const ListenerObject&) = delete;
+
+			ListenerObject():m_hasCallback(false)
 			{}
-		
-			CallbackObserver(const function<void(const T&)>& functor, shared_ptr<void> ptr):m_functor(functor), m_canary(weak_ptr<void>(ptr))
-			{}
-			
-			void react(const T& value)
+				
+			ListenerObject(const Callback<Args...>& callback)
 			{
-				m_functor(value);
+				setCallback(callback);
 			}
-			
-			bool isAlive()
+
+			void onEvent(const Args... args)
 			{
-				return m_canary.lock()!=0;
+				if(m_hasCallback)
+					m_callback(args...);
+			}	
+
+			void setCallback(const Callback<Args...>& callback)
+			{
+				m_callback = callback;
+				m_hasCallback = true;
 			}
-			
+
 		private:
-			function<void(const T&)> m_functor;
-			weak_ptr<void> m_canary;
+			bool m_hasCallback = false;
+			Callback<Args...> m_callback;
 	};
-	
-	//Internal class, node of the linkedlist containing the observers.
-	template<class T>
-	class ObserverNode
+
+	template<typename ...Args>
+	using Listener = std::shared_ptr<ListenerObject<Args...>>;
+
+	template<typename ...Args>
+	class Emitter
 	{
+		using WeakListener = std::weak_ptr<ListenerObject<Args...>>;
+
 		public:
-			ObserverNode()
-			{
-				id=0;
-			}
-			
-			ObserverNode(ObserverNode<T>&& node)
-			{
-				m_observer = node.m_observer;
-				m_next=move(node.m_next);
-				id=node.id;
-			}
-			
-			ObserverNode(const function<void(const T&)>& functor, const shared_ptr<void> ptr, const int& id):m_observer(functor, ptr), id(id)
+			Emitter()
 			{}
-			
-			~ObserverNode()
+
+			~Emitter()
 			{
-				cout << "Deleting node " << id <<endl;
+				removeListeners();	
 			}
-			
-			int addObserver(const function<void(const T&)>& functor, const shared_ptr<void> ptr)
+
+			void broadcast(const Args... args)
 			{
-				if(m_next==nullptr)
+				for(auto it = m_listeners.begin(); it != m_listeners.end();)
 				{
-					m_next=make_unique<ObserverNode<T>>(functor, ptr, id+1);
-					
-				}
-				else
-				{
-					m_next->addObserver(functor, ptr);
-				}
-				return id+1;
-			}
-			
-			void removeObserver(const int& id)
-			{	
-				if(m_next->id == id)
-				{		
-					removeNext();
-				}
-				else
-				{
-					if(!m_next)return;//check for nullptr
-					m_next->removeObserver(id);
-				}
-			}
-			
-			void notify(const T& value)//only called from the head or outside
-			{
-				if(m_next)//check if nullptr
-				{
-					CallbackObserver<T> nextObserver = m_next->m_observer;
-					if(nextObserver.isAlive())//check if the next one is valid, to know if you should remove it. Checking the next instead of the current doesnt verify the head, which is what we want.
-					{	
-						nextObserver.react(value);
-						m_next->notify(value);	
+					if(auto listener = it->lock())
+					{
+						listener->onEvent(args...);
+						++it;		
 					}
 					else
 					{
-						removeNext();
-						notify(value);
+						it = m_listeners.erase(it);
 					}
 				}
 			}
-			
-			void printAll()
+
+			void addListener(const Listener<Args...> listener)
 			{
-				cout << "Node " << id << endl;
-				if(m_next)
+				m_listeners.push_back(WeakListener(listener));
+			}	
+
+			void removeListener(const Listener<Args...> listener)
+			{
+				for(auto it = m_listeners.begin(); it != m_listeners.end();)
 				{
-					m_next->printAll();
-				}
+					if(*it == listener)
+						it = m_listeners.erase();
+					else
+						++it;
+				}	
 			}
-			
-		private:
-			CallbackObserver<T> m_observer;					//Observer callback wrapper
-			unique_ptr<ObserverNode<T>> m_next; 			//Pointer to the next observer wrapper
-			int id;
-			
-			void removeNext()
+
+			void removeListeners()
 			{
-				m_next=move(m_next->m_next);
-			}
-	};
-	
-	//A wrapper that allows the observers to be notified of its change;
-	template<class T>
-	class Observable : public ObserverNode<T>
-	{
-		public:
-			Observable(Observable<T>&& observable)
-			{
-				m_value=observable.m_value;
-			}
-		
-			template<typename ...Args>
-			Observable(Args&&... args):m_value(forward<Args>(args)...)
-			{}
-			
-			void set(const T& newValue)
-			{
-				m_value=newValue;
-				notify();
-			}
-			
-			T get() const
-			{
-				return m_value;
-			}
-			
-			void notify()
-			{
-				ObserverNode<T>::notify(m_value);
-			}
-			
-			void operator+=(const T& b)
-			{
-				m_value+=b;
-				notify();
-			}
-			
-			void operator-=(const T& b)
-			{
-				m_value-=b;
-				notify();
-			}
-			
-			void operator*=(const float& b)
-			{
-				m_value*=b;
-				notify();
-			}
-			
-			T& operator=(const T& b)
-			{
-				m_value=b;
-				notify();
-				return m_value;
+				m_listeners.clear();	
 			}
 
 		private:
-			T m_value;			
+			std::vector<WeakListener> m_listeners;
 	};
 }

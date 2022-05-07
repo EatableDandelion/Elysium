@@ -11,8 +11,9 @@ x - HUD
 General:
 v - Improve static access for debug rendering
 
-==> x - Add Register class to Circe
-    x - Use register in "ECS.h" to update BVH with mass + velocity
+	v - Add Register class to Circe
+==>	x - Set up entity+component observer
+	x - Profiling 
 
 x - Mouse select
 x - Scripting?
