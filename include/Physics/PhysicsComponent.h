@@ -1,6 +1,6 @@
 #pragma once
 #include "Circe/Circe.h"
-#include "Game/ECS.h"
+#include "Game/Game.h"
 #include "Physics/CollisionDetection.h"
 
 namespace Physics
@@ -10,9 +10,9 @@ namespace Physics
 	class PhysicsComponent : public Elysium::Component
 	{
 		public:
-			PhysicsComponent(const Real mass, const Vec& dimension,
-							 Transform transforms,
-							 std::vector<Vec>& collisionPoints);	
+			PhysicsComponent(const Real density,
+							 Transform transform,
+							 const std::vector<Vec> collisionPoints);	
 
 			void addForce(const Vec& f);
 
@@ -20,13 +20,16 @@ namespace Physics
 
 			void addForce(const Vec& f, const Vec& pointOfAction);
 
+			void addLocalForce(const Vec& f, const Vec& pointOfAction);
+
 			Vec3 getLoads() const;
 
 			void resetLoads();
 			
-			void update(const Real dt, const Vec3& loads);
+			void update(const Real dt);
 
-			virtual void update(Elysium::Entity& entity, const Real dt);
+			virtual void update(Entity& entity, 
+								std::shared_ptr<GameInterface> game);
 
 			void addForceGenerator(std::shared_ptr<ForceGenerator> force);
 
@@ -53,17 +56,19 @@ namespace Physics
 
 			Vec getSize() const;
 
-			void setSize(const Vec& size);
+//			void setSize(const Vec& size);
 
 			Collider getCollider() const;
 
 		private:
 			Vec v;
 			Real omega;
-			Vec3 m_loads;		//Force and moment;
+			Vec m_globalLoads;		//Force and moment;
+			Vec m_localLoads;
+			Real m_torque;
 			Real M_inv;			
 			Real I_inv;
-			Vec m_size;
+//			Vec m_size;
 
 			Collider m_collider;
 			Transform m_transform;

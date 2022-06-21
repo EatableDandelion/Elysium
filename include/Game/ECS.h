@@ -4,6 +4,7 @@
 #include <typeinfo>
 #include <typeindex>
 #include <iostream>
+#include <set>
 #include <Circe/Circe.h>
 #include "Game/GameInterface.h"
 #include "Rendering/RenderingEngine.h"
@@ -12,13 +13,13 @@ namespace Elysium
 {
 
 	typedef unsigned int EntityID;
-	//typedef std::type_index ComponentID;
+	typedef std::type_index ComponentID;
 	class EntityData;
 	using Entity = std::shared_ptr<EntityData>;
 
-	using ComponentID = std::uint8_t;
-	const ComponentID MAX_COMPONENTS = 256;
-	using Signature = std::bitset<ComponentID>;
+//	using ComponentID = std::uint8_t;
+//	const ComponentID MAX_COMPONENTS = 256;
+//	using Signature = std::bitset<ComponentID>;
 
 
 	template<class T>
@@ -36,10 +37,11 @@ namespace Elysium
 	class Component
 	{
 		public:
-			virtual void update(Entity& entity, const Real dt);
+			virtual void update(Entity& entity, 
+								std::shared_ptr<GameInterface> game);
 
-			virtual void draw(Entity& entity,
-							  std::shared_ptr<Renderer> renderer);
+//			virtual void draw(Entity& entity,
+//							  std::shared_ptr<Renderer> renderer);
 
 			void setEntityID(const EntityID id);
 
@@ -58,8 +60,11 @@ namespace Elysium
 
 			EntityData(const EntityData&) = delete;
 
-			void update(Entity& entity, std::shared_ptr<Renderer> renderer,
-						const Real dt);
+			void update(Entity& entity, 
+						std::shared_ptr<GameInterface> game);
+
+//			void update(Entity& entity, std::shared_ptr<Renderer> renderer,
+//						const Real dt);
 
 			template<class T, typename... Args>
 			void addComponent(Args&&... args)
@@ -105,8 +110,12 @@ namespace Elysium
 				return m_components.find(getComponentID<T>()) != 
 								m_components.end();
 			}
+
+			bool hasComponent(const ComponentID componentID) const;
 		
 			Transform getTransform();
+
+			Vec getPosition() const;
 
 			EntityID getID() const;
 
@@ -133,13 +142,28 @@ namespace Elysium
 	class System
 	{
 		public:
-			virtual void update(const Real dt, 
-								std::shared_ptr<GameInterface> context) = 0;
+			virtual void update(std::shared_ptr<GameInterface> game) = 0;
 
 			virtual void onComponentAdded(Entity entity, 
-										  const ComponentID id){};
+										  const ComponentID id);
 
 			virtual void onComponentRemoved(Entity entity, 
-										  	const ComponentID id){};
+										  	const ComponentID id);
+
+			template<typename T>
+			void addComponentType()
+			{
+				m_key.insert(getComponentID<T>());
+			}
+
+			bool isCompatible(const Entity& entity) const;
+
+			bool hasEntity(const EntityID id) const;
+
+		protected:
+			std::set<EntityID> m_entities;
+
+		private:
+			std::set<ComponentID> m_key;
 	};
 }

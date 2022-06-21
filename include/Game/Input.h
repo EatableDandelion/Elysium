@@ -92,8 +92,9 @@ namespace Elysium
 			static constexpr Key KEY_BACKSPACE = 8;
 			static constexpr Key KEY_TAB = 9;
 			static constexpr Key KEY_SPACE = 32;
-			static constexpr Key KEY_MINUS = 1073741910;
-			static constexpr Key KEY_EQUALS = 1073741911;
+			static constexpr Key KEY_KP_MINUS = 1073741910;
+			static constexpr Key KEY_KP_PLUS = 1073741911;
+			static constexpr Key KEY_KP_ENTER = 1073741912;
 			static constexpr Key KEY_MOUSELEFT = 200;
 			static constexpr Key KEY_MOUSERIGHT = 201;
 		

@@ -9,7 +9,6 @@
 #include "Rendering/RenderingEngine.h"
 #include "Game/Input.h"
 #include "Game/Game.h"
-#include "Game/World.h"
 
 namespace Elysium
 {

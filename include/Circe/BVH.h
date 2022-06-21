@@ -4,6 +4,7 @@
 #include <vector>
 #include <stack>
 #include <map>
+#include <set>
 #include <algorithm>
 #include "Math.h"
 #include "Utils.h"
@@ -39,7 +40,40 @@ namespace Circe
 		private:
 			unsigned int m_id = -1;
 			Callback<unsigned int> m_callback;
+
 	};
+
+	struct GravityWell
+	{
+		Real mass = (Real)0.0;
+		Vec<DIMENSION> position;
+		Vec<DIMENSION> velocity;
+		Real size2;
+		Real d2;
+		bool dirty = false;
+
+		void update(const GravityWell& m1, const GravityWell& m2)
+		{
+			mass = m1.mass + m2.mass;
+			
+			position = m1.position * m1.mass + m2.position * m2.mass;
+			position = position / mass;
+
+			velocity = m1.velocity * m1.mass + m2.velocity * m2.mass;
+			velocity = velocity / mass;				
+			
+			Vec<DIMENSION> dr = m1.position - m2.position;
+			size2 = dot(dr,dr);
+
+			dirty = false;
+		}
+
+		bool operator<(const GravityWell& other) const
+		{
+			return mass/d2 > other.mass/other.d2;
+		}
+	};
+
 
 	/** N is the dimension, V is inherited from PrimitiveVolume **/
 	template<std::size_t N, typename V>
@@ -50,9 +84,11 @@ namespace Circe
 			{
 				V volume;
 				unsigned int id;
+				GravityWell well;
+
 				std::weak_ptr<Node> parent;
 				std::shared_ptr<Node> child1;	
-				std::shared_ptr<Node> child2;	
+				std::shared_ptr<Node> child2;
 
 				bool isLeaf() const
 				{
@@ -79,12 +115,10 @@ namespace Circe
 		public:
 
 			/** 
-			  	Callback insert:
 			  	Insert a node, while choosing the type of volume. The
 			    nodes are auto-updated through an observer pattern
 			**/
-			std::shared_ptr<Node> insert(const unsigned int id,
-				   						 V& volume)	
+			void insert(const unsigned int id, V& volume)	
 			{
 				std::shared_ptr<Node> node = std::make_shared<Node>();
 
@@ -102,20 +136,17 @@ namespace Circe
 				m_ids.push_back(id);
 
 				insert(node);
-
-				return node;
 			}
 		
-			/**
-			  	Low-tech insert:
+			/** 
 			  	Insert a node, with the default volume type. The
 			    nodes should be updated manually. 
 			**/
-			std::shared_ptr<Node> insert(const unsigned int id,
-										 const Vec<N>& position, 
-										 const Vec<N>& size,
-										 const Vec<N>& velocity = Vec<N>(),
-										 const Real mass = 0)
+			void insert(const unsigned int id,
+					    const Vec<N>& position, 
+					    const Vec<N>& size,
+					    const Vec<N>& velocity = Vec<N>(),
+					    const Real mass = 0)
 			{
 				std::shared_ptr<Node> node = std::make_shared<Node>();
 
@@ -128,7 +159,7 @@ namespace Circe
 
 				insert(node);
 
-				return node;
+				update(id, position, size, velocity, mass);
 			}
 
 			void remove(const unsigned int id)
@@ -164,10 +195,53 @@ namespace Circe
 				leaf->volume.setPosition(position);
 				leaf->volume.setSize(size);
 				leaf->volume.setMargin(velocity);
-				leaf->volume.setMass(mass);
-
+				leaf->well.mass = mass;
+				leaf->well.position = position;
+				leaf->well.velocity = velocity;
+				leaf->well.dirty = true;
+				dirty = true;
 				update(id);
 			}		
+
+			void updateBH()
+			{
+				dirty = false;
+
+				std::stack<std::shared_ptr<Node>> stack;
+
+				for(unsigned int id : m_ids)
+				{
+					if(m_leaves.at(id)->well.dirty)
+					{
+						stack.push(m_leaves.at(id));
+					}
+				}
+					
+				while(!stack.empty())
+				{
+					std::shared_ptr<Node> node = stack.top();
+					stack.pop();
+
+					if(node->isRoot()) continue;
+
+					if(std::shared_ptr<Node> parent = node->parent.lock())
+					{
+						std::shared_ptr<Node> c1 = parent->child1;
+						std::shared_ptr<Node> c2 = parent->child2;
+
+						if(c1->well.dirty || c2->well.dirty)
+						{
+							parent->well.update(c1->well, c2->well);
+
+							stack.push(parent);
+
+							parent->well.dirty = true;
+							c1->well.dirty = false;
+							c2->well.dirty = false;
+						}
+					}
+				}
+			}
 
 			std::vector<Intersection> getInternalContacts()
 			{
@@ -248,65 +322,64 @@ namespace Circe
 				return result;
 		    }
 
+
 			/** 
 			  	Barnes Hut gravity: theta goes from 1.5 (inaccurate)
 			    to 0.0 (n^2)
 			 **/
-			Vec<N> getGravity(const unsigned int id, 
-						   const Real theta = 1.0)
+			std::set<GravityWell> getGravityWells(const unsigned int id, 
+						   	  		   		 const Real theta = 1.0)
 			{
-				Vec<N> position = m_leaves[id]->volume.getCoG();
+				if(dirty)
+				{
+					updateBH();
+				}
+
+				std::set<GravityWell> wells;
+
+				Vec<N> position = m_leaves[id]->well.position;
 
 				std::stack<std::shared_ptr<Node>> stack;
 				stack.push(m_root);
 			
-				Vec<N> force;
-
 				Real ratio;
-				Vec<N> dr;
-				Real mass;
 				while(!stack.empty())
 				{
 					std::shared_ptr<Node> node = stack.top();
+					stack.pop();
 
-					if(node->volume.mass > 0.0)
+					if(node->well.mass == 0.0) continue;
+					if(node->id == id) continue;
+
+					Vec<N> dr = node->well.position - position;
+					Real d2 = dot(dr, dr);
+
+					node->well.d2 = d2;
+
+					if(node->isLeaf())
 					{
-						dr = node->volume.getCoG() - position;
-				      	if(node.isLeaf())
+						wells.insert(node->well);
+					}
+					else
+					{
+						ratio = std::sqrt(node->well.size2/d2);
+
+						if(ratio < theta 
+						   && !m_leaves[id]->volume.isInside(node->volume))
 						{
-							if(node->id != id)
-							{
-								force = force + node->volume.getMass()
-											  * normalize(dr)/dot(dr, dr);
-							}
-							else
-							{
-								mass = node->volume.getMass();
-							}
+							wells.insert(node->well);
 						}
 						else
 						{
-							ratio=node->volume.getBarnesHutRatio(dr);
-
-							if(ratio < theta)
-							{
-
-								force = force + node->volume.getMass()
-										  	  * normalize(dr)/dot(dr, dr);
-
-							}
-							else
-							{
-								stack.push(node->child1);	
-								stack.push(node->child2);	
-							}
+							stack.push(node->child1);	
+							stack.push(node->child2);	
 						}
 					}
+					
 
-					stack.pop();
 				}
 
-				return force * mass;
+				return wells;
 			}
 
 			typename std::vector<unsigned int>::iterator begin()
@@ -340,6 +413,7 @@ namespace Circe
 			std::shared_ptr<Node> m_root;
 			std::map<unsigned int, std::shared_ptr<Node>> m_leaves;
 			std::vector<unsigned int> m_ids;
+			bool dirty = false;
 
 			void insert(const std::shared_ptr<Node> leaf)
 			{
@@ -489,43 +563,4 @@ namespace Circe
 				}
 			}
 	};
-
-	/* Debug */
-/*	class AABB : public PrimitiveVolume<AABB>
-	{
-		public:
-		AABB();
-
-		AABB(const Vec<DIMENSION>& center, const Vec<DIMENSION>& width);
-
-		void refit(const AABB& v1, const AABB& v2);
-
-		bool isInside(const AABB& v) const;
-
-		virtual bool intersects(const AABB& other) const;
-
-		Real getUnionArea(const AABB& s1) const;
-
-		Real getArea() const;
-
-		void setPosition(const Vec<DIMENSION>& position);
-
-		void setMargin(const Vec<DIMENSION>& v);
-
-		Real getBarneHutRatio(const Vec<DIMENSION>& dr) const;
-
-		Vec<DIMENSION> getCoG() const;
-
-		Real getMass() const;
-
-		void setMass(const Real m);
-
-		Vec<DIMENSION> center;
-		Vec<DIMENSION> halfWidth;
-		Vec<DIMENSION> margin;
-		Real mass;
-		Vec<DIMENSION> cog;
-		Real gravityWidth;
-	};
-*/	
 }

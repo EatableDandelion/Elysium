@@ -13,19 +13,39 @@ namespace Elysium
 	void RenderingNode::init(RenderContext& renderer)
 	{
 		m_shader.bind();
+
 		m_pass->init(renderer, m_shader);
 
 		if(m_next != nullptr)
+		{
 			m_next->init(renderer);
+		}
 	}
 
 	void RenderingNode::draw(RenderContext& renderer)
 	{
 		m_shader.bind();
+
 		m_pass->draw(renderer, m_shader);
 
 		if(m_next != nullptr)
+		{
 			m_next->draw(renderer);
+		}
+	}
+
+	void RenderingNode::draw(Model& model,
+							 const Transform transform, 
+							 RenderContext& renderer)
+	{
+		m_shader.bind();
+
+		m_pass->draw(model, transform, renderer, m_shader);
+
+		if(m_next != nullptr)
+		{
+			m_next->draw(model, transform, renderer);
+		}
 	}
 
 	PassID RenderingNode::getID() const
@@ -43,33 +63,34 @@ namespace Elysium
 
 	void Renderer::init()
 	{
-		m_wasInit = true;
+		m_init = true;
 
-		if(m_next != nullptr)
-			m_next->init(m_renderer);
+		m_geometryPasses->init(m_renderer);
+		m_postProcesses->init(m_renderer);
 	}
 
 	void Renderer::draw(Model& model, const Transform transform)
 	{
-		if(!m_shaderBound)
-		{
-			m_shaderBound = true;
-			m_shader.bind();
-		}
+		if(!m_init) init();
 
-		m_pass->draw(model, transform, m_renderer, m_shader);
+		m_renderer.writeFBO();
+		m_geometryPasses->draw(model, transform, m_renderer);
 	}
 
 	void Renderer::draw()
 	{
-		if(!m_wasInit)
-		{
-			init();
-		}
+		if(!m_init) init();
 
-		RenderingNode::draw(m_renderer);
-		m_shaderBound = false;
+		m_renderer.writeFBO();
+
+		m_geometryPasses->draw(m_renderer);
+
+		m_renderer.readFBO();
+
+		m_postProcesses->draw(m_renderer);
+
 		swapBuffers();
+
 	}
 
 	Camera& Renderer::getCamera()

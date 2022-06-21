@@ -71,11 +71,18 @@ namespace Physics
 
 		Vec r1 = getR1();
 		Real moment = r1(0)*F(1)-r1(1)*F(0);
-		component1->update(dt, Vec3(-F(0),-F(1),-F(2)-dt*moment));
-		
+		//component1->update(dt, Vec3(-F(0),-F(1),-F(2)-dt*moment));
+		component1->addForce(Vec2(-F(0), -F(1)));
+		component1->addTorque(-F(2)-dt*moment);
+
 		Vec r2 = getR2();
 		moment = r2(0)*F(4)-r2(1)*F(3);	
-		component2->update(dt, Vec3(-F(3),-F(4),-F(5)-dt*moment));
+		//Note: this commented line has not been tested,
+		//If there is a problem, that's likely here
+		//component2->update(dt, Vec3(-F(3),-F(4),-F(5)-dt*moment));
+		component2->addForce(Vec2(-F(3), -F(4)));
+		component2->addTorque(-F(5)-dt*moment);
+
 	}
 
 	void ConstraintSolver::applyImpulse(const Real dt, 

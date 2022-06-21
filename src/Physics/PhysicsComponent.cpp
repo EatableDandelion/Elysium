@@ -2,25 +2,27 @@
 
 namespace Physics
 {
-	PhysicsComponent::PhysicsComponent(const Real mass, 
-									   const Vec& dimension,
-									   Transform transform,
-									   std::vector<Vec>& collisionPoints)
-	: M_inv(1.0/mass), m_transform(transform), omega(0), m_size(dimension),
-	  m_collider(collisionPoints, transform)
+	PhysicsComponent::PhysicsComponent(const Real density, 
+									 Transform transform,
+									 const std::vector<Vec> collisionPoints)
+	: m_transform(transform), omega(0),
+	  m_collider(collisionPoints, transform), m_torque(0.0)
 	{
-		setInertia(dimension);
+		Real mass = density;
+		for(int i = 0; i<DIMENSION; i++) mass *= transform->getScale()(i);
+		M_inv = 1.0/mass; 
+		setInertia(transform->getScale());
 	}
 
 	void PhysicsComponent::addForce(const Vec& force)
 	{
-		m_loads(0) = m_loads(0) + force(0);	
-		m_loads(1) = m_loads(1) + force(1);	
+		m_globalLoads(0) = m_globalLoads(0) + force(0);	
+		m_globalLoads(1) = m_globalLoads(1) + force(1);	
 	}
 
 	void PhysicsComponent::addTorque(const Real t)
 	{
-		m_loads(2) = m_loads(2) + t;
+		m_torque += t;
 	}
 
 	void PhysicsComponent::addForce(const Vec& force, const Vec& PoA)
@@ -30,36 +32,39 @@ namespace Physics
 //		addTorque(cross(pos-m_transform->getPosition(), f));	
 	}
 
-	Vec3 PhysicsComponent::getLoads() const
+	void PhysicsComponent::addLocalForce(const Vec& f, const Vec& PoA)
 	{
-		return m_loads;
+		m_localLoads(0) = m_localLoads(0) + f(0);
+		m_localLoads(1) = m_localLoads(1) + f(1);
+		addTorque(cross(PoA, f));
 	}
 
 	void PhysicsComponent::resetLoads()
 	{
-		m_loads = 0.0;
+		m_globalLoads = 0.0;
+		m_torque = 0.0;
 	}
 	
-/*	void PhysicsComponent::updateLoads(const Real dt)
+	void PhysicsComponent::update(const Real dt)
 	{
-		for(std::shared_ptr<ForceGenerator> force : m_forces)
-			force->apply(dt, *this, m_transform);
-	}
-*/	
-	void PhysicsComponent::update(const Real dt, const Vec3& loads)
-	{
-		for(int i = 0; i<2; i++)
-			v(i) = v(i) + loads(i) * dt * M_inv; 
+		v = v + m_globalLoads * dt * M_inv; 
+		omega = omega + m_torque * dt * I_inv;
 
-		omega = omega + loads(2) * dt * I_inv;
 		m_transform->translate(v*dt);
 		m_transform->rotate(omega*dt);
 	}
 	
-	void PhysicsComponent::update(Elysium::Entity& entity, const Real dt)
+	void PhysicsComponent::update(Entity& entity, 
+								  std::shared_ptr<GameInterface> game)
 	{
-		entity->setVariable("velocity", v);
-		entity->setVariable("mass", 1.0/M_inv);
+//		entity->setVariable("velocity", v);
+//		entity->setVariable("mass", 1.0/M_inv);
+		m_globalLoads = m_globalLoads 
+					  +entity->getTransform()->toGlobal(m_localLoads,false);
+
+		m_localLoads.reset();
+
+		//m_collider.draw();
 	}
 
 	void PhysicsComponent::addForceGenerator
@@ -69,7 +74,8 @@ namespace Physics
 	}
 
 			
-	std::vector<std::shared_ptr<ForceGenerator>> PhysicsComponent::getForceGenerators()
+	std::vector<std::shared_ptr<ForceGenerator>> 
+							PhysicsComponent::getForceGenerators()
 	{
 		return m_forces;
 	}
@@ -124,13 +130,14 @@ namespace Physics
 
 	Vec PhysicsComponent::getSize() const
 	{
-		return m_size;
+		return m_transform->getScale();
+		//return m_size;
 	}
 
-	void PhysicsComponent::setSize(const Vec& size)
+/*	void PhysicsComponent::setSize(const Vec& size)
 	{
 		m_size = size;
-	}
+	}*/
 
 	Collider PhysicsComponent::getCollider() const
 	{

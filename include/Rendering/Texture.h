@@ -71,6 +71,8 @@ namespace Elysium
 
 			void applyDepthBuffer();
 
+			bool isOpen() const;
+
 		private:
 			GLuint m_fbo;
 			GLuint m_rbo;
@@ -80,6 +82,7 @@ namespace Elysium
 			TextureLoader m_textureLoader;
 			int m_width;
 			int m_height;
+			bool m_open;
 	};
 }
 

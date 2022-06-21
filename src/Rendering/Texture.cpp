@@ -94,7 +94,8 @@ namespace Elysium
 	FrameBuffer::FrameBuffer(const int width, const int height, 
 							 const int nbTextures):m_width(width),
 												   m_height(height),
-												   m_nbTextures(nbTextures)
+												   m_nbTextures(nbTextures),
+												   m_open(false)
 	{
 		glGenFramebuffers(1, &m_fbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
@@ -138,8 +139,8 @@ namespace Elysium
 
 	void FrameBuffer::read()
 	{
+		m_open = false;
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//		glDrawBuffer(GL_COLOR_ATTACHMENT0);
 		for(int i = 0; i < m_textures.size(); i++)
 		{
 			m_textures[i].bind(i);
@@ -148,6 +149,7 @@ namespace Elysium
 
 	void FrameBuffer::write()
 	{
+		m_open = true;
 		glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 		glDrawBuffers(m_nbTextures, m_attachments);
 	}
@@ -163,6 +165,10 @@ namespace Elysium
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);	
 	}
 
+	bool FrameBuffer::isOpen() const
+	{
+		return m_open;
+	}
 }
 
 

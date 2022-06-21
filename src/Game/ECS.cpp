@@ -2,11 +2,12 @@
 
 namespace Elysium
 {
-	void Component::update(Entity& entity, const Real dt)
+	void Component::update(Entity& entity, 
+						   std::shared_ptr<GameInterface> game)
 	{}
 
-	void Component::draw(Entity& entity, std::shared_ptr<Renderer> renderer)
-	{}
+//	void Component::draw(Entity& entity, std::shared_ptr<Renderer> renderer)
+//	{}
 
 	EntityID EntityData::allid=0;
 	
@@ -47,13 +48,13 @@ namespace Elysium
 	}
 
 	void EntityData::update(Entity& entity, 
-							std::shared_ptr<Renderer> renderer, 
-							const Real dt)
+							std::shared_ptr<GameInterface> game)
 	{
 		for(auto component : m_components)
 		{
-			component.second->update(entity, dt);
-			component.second->draw(entity, renderer);
+			component.second->update(entity, game);
+//			component.second->update(entity, dt);
+//			component.second->draw(entity, renderer);
 		}
 	}
 
@@ -72,8 +73,47 @@ namespace Elysium
 		return id;
 	}
 			
+	bool EntityData::hasComponent(const ComponentID componentID) const
+	{
+		return m_components.count(componentID);
+	}
+
 	Transform EntityData::getTransform()
 	{
 		return m_transform;
+	}
+			
+	Vec EntityData::getPosition() const
+	{
+		return m_transform->getPosition();
+	}
+
+	void System::onComponentAdded(Entity entity, const ComponentID id)
+	{
+		if(isCompatible(entity))
+		{
+			m_entities.insert(entity->getID());
+		}
+	}
+
+	void System::onComponentRemoved(Entity entity, const ComponentID id)
+	{
+		if(!isCompatible(entity) && hasEntity(entity->getID()))
+		{
+			m_entities.erase(entity->getID());
+		}
+	}
+
+	bool System::isCompatible(const Entity& entity) const
+	{
+		for(ComponentID id : m_key)
+			if(!entity->hasComponent(id)) return false;
+
+		return true;
+	}
+			
+	bool System::hasEntity(const EntityID id) const
+	{
+		return m_entities.find(id) != m_entities.end();
 	}
 }

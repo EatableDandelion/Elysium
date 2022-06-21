@@ -13,22 +13,23 @@ void TestPhysics::init(std::shared_ptr<Context> context)
 	std::shared_ptr<Physics::PhysicsEngine> phi = 
 							std::make_shared<Physics::PhysicsEngine>();
 	
-	context->addSystem(phi);
+	context->setPhysicsEngine(phi);
 
 
 
-	context->getRenderer()->setFirstPass<GeometryPass>
+	context->getRenderer()->addGeometryPass<GeometryPass>
 						   (context->newShader("geometry"));
 
-	context->getRenderer()->addPass<DirectionalLightPass>(
+	context->getRenderer()->addPostProcessPass<DirectionalLightPass>(
 							context->newShader("directionalLight"), 
 					 		context->newMesh("sprite"));
 
 	context->getRenderer()
-			->addPass<AmbientPass>(context->newShader("screen"),
+			->addPostProcessPass<AmbientPass>(context->newShader("screen"),
 								   context->newMesh("sprite"), 0.0f);
 
-	context->getRenderer()->addPass<DebugPass>(context->newShader("debug"));
+	context->getRenderer()->addPostProcessPass<DebugPass>
+							(context->newShader("debug"));
 
 	Debug.setDebugRenderer(context->getRenderer()->getPass<DebugPass>());
 
@@ -50,7 +51,7 @@ void TestPhysics::init(std::shared_ptr<Context> context)
 	std::vector<Vec> 
 			collisionPoints({Vec(-1,-1),Vec(-1,1),Vec(1,1),Vec(1,-1)});
 	
-	sprite1->addComponent<Physics::PhysicsComponent>(10.0, Vec(1,1),
+	sprite1->addComponent<Physics::PhysicsComponent>(10.0, 
 						   sprite1->getTransform(), collisionPoints);
 
 	sprite1->getComponent<Physics::PhysicsComponent>()
@@ -61,7 +62,7 @@ void TestPhysics::init(std::shared_ptr<Context> context)
 						Model(context->newMesh("sprite"), 
 							  context->newTexture("bricks2.png")));
 
-	sprite2->addComponent<Physics::PhysicsComponent>(100.0, Vec(1,1),
+	sprite2->addComponent<Physics::PhysicsComponent>(100.0, 
 							   sprite2->getTransform(), collisionPoints);
 
 }

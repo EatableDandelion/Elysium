@@ -37,6 +37,10 @@ namespace Elysium
 
 			void applyDepthBuffer();
 
+			void writeFBO();
+
+			void readFBO();
+
 			Circe::Vec2 getScreenSize() const;
 
 			static constexpr RenderBit BLEND		{1 << 0};
@@ -58,29 +62,25 @@ namespace Elysium
 	{
 		public:
 			/** Override this to initialize constant shader uniforms */
-			virtual void init(RenderContext& renderer, Shader& shader) = 0;
+			virtual void init(RenderContext& renderer, Shader& shader)
+			{}
 
 			/** Set up the pass, draw all the models, finish pass */
 			virtual void draw(RenderContext& renderer,
 							  Shader& shader) = 0;
 	
 
-			virtual void startDraw(RenderContext& renderer){};
-
+			/** Draw a single model outside of the main pipeline */
 			virtual void draw(Model& model,
-					  const Transform transform, 
-					  RenderContext& renderer,
-					  Shader& shader){};
+							  const Transform transform, 
+							  RenderContext& renderer,
+							  Shader& shader){};
 
-			virtual void endDraw(RenderContext& renderer){};
 	};
 
 	class GeometryPass : public RenderingPass
 	{
 		public:
-			virtual void init(RenderContext& renderer, Shader& shader);
-
-			void startDraw(RenderContext& renderer);
 
 			void draw(Model& model,
 					  const Transform transform, 
@@ -106,7 +106,6 @@ namespace Elysium
 	class DebugPass : public RenderingPass
 	{
 		public:
-			virtual void init(RenderContext& renderer, Shader& shader);
 
 			virtual void draw(RenderContext& renderer,
 							  Shader& shader);

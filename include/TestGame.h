@@ -17,10 +17,12 @@
 #include "Game/Player.h"
 #include "Game/Input.h"
 #include "Game/Game.h"
+#include "Game/CameraComponent.h"
 #include "Physics/PhysicsComponent.h"
 #include "Physics/Constraint.h"
 #include "Physics/Physics.h"
 #include "Physics/CollisionDetection.h"
+#include "Carina/ShipComponent.h"
 
 using namespace Elysium;
 
@@ -30,9 +32,10 @@ class TestGame : public Elysium::Game
 	public:
 		virtual void init(std::shared_ptr<Context> context);
 
-		virtual void update(const Real dt,std::shared_ptr<Context> context);
+		virtual void update(std::shared_ptr<Context> context);
 
 	private:
+		GeometryLoader m_geometries;	
 		std::shared_ptr<Mover> mover;
 		Entity sprite1, sprite2, sprite3;
 };

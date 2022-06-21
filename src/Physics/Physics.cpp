@@ -59,10 +59,11 @@ namespace Physics
 
 
 
-	void PhysicsEngine::update(const Real dt, 
-						   std::shared_ptr<Elysium::GameInterface> context)
+	void PhysicsEngine::update(std::shared_ptr<GameInterface> context)
 	{
 		//m_tree.draw();
+
+		Real dt = context->getTimeStep();
 
 		for(EntityID entityID : m_tree)
 		{
@@ -75,7 +76,18 @@ namespace Physics
 						  component->getSize(),
 						  component->getVelocity(),
 						  1.0/component->getMassInv());
-		
+				
+
+			std::set<Circe::GravityWell> objects 
+										= m_tree.getGravityWells(entityID);
+
+			for(Circe::GravityWell obj : objects)
+			{
+				Vec dx = obj.position - component->getPosition();
+				Real r = std::sqrt(dot(dx, dx));
+				Real m = obj.mass / component->getMassInv();
+				component->addForce(dx * m * Constants::GRAVITY / (r*r*r));
+			}
 
 			for(std::shared_ptr<ForceGenerator> 
 					forceGen : component->getForceGenerators())
@@ -83,7 +95,7 @@ namespace Physics
 				forceGen->apply(dt, *component, entity->getTransform());
 			}
 
-			component->update(dt, component->getLoads());
+			component->update(dt);
 			
 			component->resetLoads();
 		}
@@ -130,4 +142,10 @@ namespace Physics
 	{
 		m_joints.push_back(joint);
 	}
+	
+	 std::vector<unsigned int> PhysicsEngine::query(const 
+			std::shared_ptr<Circe::PrimitiveVolume<Circe::AABB>> volume)
+	 {
+		return m_tree.query(volume);
+	 }
 }

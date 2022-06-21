@@ -85,35 +85,39 @@ namespace Elysium
 		m_frame.applyDepthBuffer();
 	}
 	
+	void RenderContext::writeFBO()
+	{
+		if(m_frame.isOpen()) return;
+
+		disable(RenderContext::BLEND);
+		enable(RenderContext::FRAMEBUFFER);
+		enable(RenderContext::DEPTH_WRITE | 
+			   RenderContext::DEPTH_READ);
+		clear(0.0f);
+	}
+
+	void RenderContext::readFBO()
+	{
+		if(!m_frame.isOpen()) return;
+
+		enable(RenderContext::BLEND);
+		disable(RenderContext::FRAMEBUFFER);
+		clear(0.0f, true, false, false);
+		applyDepthBuffer();
+	}
+
+
 	Circe::Vec2 RenderContext::getScreenSize() const
 	{
 		return m_screenSize;
 	}
 	
-	
-	void GeometryPass::init(RenderContext& renderer, Shader& shader)
-	{}
 
-	void GeometryPass::startDraw(RenderContext& renderer)
-	{
-		renderer.disable(RenderContext::BLEND);
-		renderer.enable(RenderContext::FRAMEBUFFER);
-		renderer.enable(RenderContext::DEPTH_WRITE | 
-						RenderContext::DEPTH_READ);
-		renderer.clear(0.0f);
-	}
-	
 	void GeometryPass::draw(Model& model,		
 					  		const Transform transform, 
 							RenderContext& renderer,
 							Shader& shader)
 	{
-		if(!wasInit)
-		{
-			wasInit = true;
-			startDraw(renderer);
-		}
-
 		Mat mvp = renderer.getCamera().getViewProjection() 
 						*(transform->getTransformMatrix());
 
@@ -123,20 +127,11 @@ namespace Elysium
 	}
 
 	void GeometryPass::draw(RenderContext& renderer, Shader& shader)
-	{
-		renderer.enable(RenderContext::BLEND);
-		renderer.disable(RenderContext::FRAMEBUFFER);
-		renderer.clear(0.0f, true, false, false);
-		renderer.applyDepthBuffer();
-		wasInit = false;
-	}
+	{}
 
 
 	DebugObject::DebugObject():
 			m_transform(std::make_shared<Circe::Trans<DIMENSION>>())
-	{}
-
-	void DebugPass::init(RenderContext& renderer, Shader& shader)
 	{}
 
 	void DebugPass::draw(RenderContext& renderer, Shader& shader)
@@ -230,5 +225,4 @@ namespace Elysium
 		ellipse.m_color = color;
 		m_objects.push(ellipse);
 	}
-
 }

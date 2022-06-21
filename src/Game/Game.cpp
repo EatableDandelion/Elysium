@@ -38,6 +38,14 @@ namespace Elysium
 		return m_entities;
 	}
 
+	std::vector<unsigned int> Context::query
+			(const std::shared_ptr<Circe::PrimitiveVolume
+			 						<Constants::BroadCollider>> volume)
+	{
+		return m_physics->query(volume);
+	}
+
+
 	void Context::onComponentAdded(const EntityID entityID,
 							   	   const ComponentID c)
 	{
@@ -58,13 +66,41 @@ namespace Elysium
 		}
 	}
 
-	/*void Context::update(const Real dt)
+	std::shared_ptr<Input> Context::getInput()
 	{
-		for(auto pair : m_entities)
-		{
-			pair.second->update(pair.second, m_renderer, dt);
-		}
-	}*/
+		return m_input;
+	}
+	
+	std::shared_ptr<Renderer> Context::getRenderer() const
+	{
+		return m_renderer;
+	}
+
+	Vec3 Context::getCameraPosition() const
+	{
+		return m_renderer->getCamera().getTransform()->getPosition();
+	}
+
+	void Context::setCameraPosition(const Vec3 position)
+	{
+		m_renderer->getCamera().getTransform()->setPosition(position);
+	}
+
+	Real Context::getTimeStep() const
+	{
+		return m_dt;
+	}
+
+	Real Context::getTotalTime() const
+	{
+		return m_totalTime;
+	}
+
+	void Context::setTime(const Real dt, const Real totalTime)
+	{
+		m_dt = dt;
+		m_totalTime = totalTime;
+	}
 
 	Shader Context::newShader(const std::string& name)
 	{
@@ -85,11 +121,6 @@ namespace Elysium
 	{
 		return m_models.getResource(name); 
 	}
-		
-	std::shared_ptr<Input> Context::getInput()
-	{
-		return m_input;
-	}	
 
 	void Context::setShadersDirectory(const std::string& name)
 	{
@@ -105,14 +136,17 @@ namespace Elysium
 	{
 		m_textures.setFolderLocation(name);
 	}
-	std::shared_ptr<Renderer> Context::getRenderer() const
-	{
-		return m_renderer;
-	}
 
 	void Context::setRenderer(const std::shared_ptr<Renderer> renderer)
 	{
 		m_renderer = renderer;
+	}
+
+	void Context::setPhysicsEngine
+				(const std::shared_ptr<Physics::IPhysicsEngine> physics)
+	{
+		m_physics = physics;
+		addSystem(physics);
 	}
 
 	void Context::addSystem(const std::shared_ptr<System> system)
@@ -135,19 +169,19 @@ namespace Elysium
 		init(m_context);
 	}
 
-	void Game::updateAll(const Real dt)
+	void Game::updateAll(const Real dt, const Real totalTime)
 	{
-		update(dt, m_context);
+		m_context->setTime(dt, totalTime);
+		update(m_context);
 
 		for(auto pair : m_context->getEntities())
 		{
-			pair.second->update(pair.second, m_context->getRenderer(), dt);
+			pair.second->update(pair.second, m_context);
 		}
-//		m_world.update(dt, m_context->getRenderer());
 
 		for(std::shared_ptr<System> system : m_context->getSystems())
 		{
-			system->update(dt, m_context);
+			system->update(m_context);
 		}
 	}
 

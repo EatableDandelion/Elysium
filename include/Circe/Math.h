@@ -59,7 +59,7 @@ namespace Circe
 	{
 		return a.dot(b);
 	}
-	
+
 	//Inequality operator
 	template<std::size_t N>
 	bool operator!=(const Vec<N>& a, const Vec<N>& b)
@@ -732,15 +732,25 @@ namespace Circe
 			void operator*=(const Real& f);
 
 			/** Solve the LU factorization of Ax = b with b = this */
-			Mat operator/(const Mat& A);
+			Mat operator/(Mat& A) const;
 
 			Mat solveLU(const Mat& A);
 					
+			void initQR();
+
+			Mat getColumn(const int index) const;
+
+			Mat backSolve(const Mat& A) const;
+
+			Mat solveQR(Mat& A) const;
+
 			//Get the coefficient at row i and column j
 			Real operator()(const int& i, const int& j = 0) const;
 			
 			//Set the coefficient at row i and column j
 			Real& operator()(const int& i, const int& j = 0);
+
+			void set(const int& i, const int& j, const Real& value);
 
 			std::size_t getNbRows() const;
 			
@@ -749,6 +759,9 @@ namespace Circe
 		private:
 			std::vector<Real> data;
 			std::size_t M,N;
+			std::shared_ptr<Mat> Q;
+			std::shared_ptr<Mat> R;
+			bool hasQR = false;
 	};
 	
 	//using Mat44=Mat<4, 4>;
@@ -868,7 +881,6 @@ namespace Circe
 			Real x,y,z,w;
 	};
 	
-
 
 	static Mat transpose(const Mat& m)
 	{

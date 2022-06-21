@@ -7,18 +7,20 @@ x - Normal map
 x - Instance rendering
 x - Text
 x - HUD
+x - Marching square
 
 General:
 v - Improve static access for debug rendering
 
-	v - Add Register class to Circe
-==>	x - Set up entity+component observer
+v - Add Register class to Circe
+v - Set up entity+component observer
 	x - Profiling 
 
 x - Mouse select
 x - Scripting?
 
 Physics:
-x - Bounding Volume Hierarchy
+v - Bounding Volume Hierarchy
+x - Friction
 x - Add contact coherence (Physics book page 328)
-x - Raycast
+v - Raycast

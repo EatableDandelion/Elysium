@@ -1,15 +1,15 @@
 #pragma once
 #include <Circe/Circe.h>
 #include <Circe/BVH.h>
-#include "Game/ECS.h"
-#include "Game/World.h"
+#include "Game/Constants.h"
+#include "Physics/PhysicsEngine.h"
 #include "Physics/PhysicsComponent.h"
 #include "Physics/Constraint.h"
 #include "Physics/CollisionDetection.h"
+#include <set>
 
 namespace Physics
 {
-	
 	class ForceGenerator
 	{
 		public:
@@ -50,25 +50,28 @@ namespace Physics
 			Vec m_anchor;
 	};
 
-	class PhysicsEngine : public Elysium::System
+	class PhysicsEngine : public IPhysicsEngine
 	{
 		public:
-			virtual void onComponentAdded(Elysium::Entity entity, 
-									  	  const Elysium::ComponentID id);
+			virtual void onComponentAdded(Entity entity, 
+									  	  const ComponentID id);
 
-			virtual void onComponentRemoved(Elysium::Entity entity, 
-									  	  const Elysium::ComponentID id);
+			virtual void onComponentRemoved(Entity entity, 
+									  	  const ComponentID id);
 
-			virtual void update(const Real dt,
-						std::shared_ptr<Elysium::GameInterface> context);
+			virtual void update(std::shared_ptr<GameInterface> context);
 	
 			void addConstraint(const std::shared_ptr<Joint>& joint);
+
+			virtual std::vector<unsigned int> query(const 
+			std::shared_ptr<Circe::PrimitiveVolume
+							<Constants::BroadCollider>> volume);
 
 		private:
 			std::vector<std::shared_ptr<Joint>> m_joints;
 			std::stack<std::shared_ptr<Joint>> m_contacts;
 			ConstraintSolver m_constraintSolver;
 			CollisionDetector m_detector;
-			Circe::BVH<DIMENSION, Physics::AABB> m_tree;
+			Circe::BVH<DIMENSION, Circe::AABB> m_tree;
 	};
 }

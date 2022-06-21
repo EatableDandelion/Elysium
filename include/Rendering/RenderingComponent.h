@@ -13,8 +13,8 @@ namespace Elysium
 		public:
 			RenderingComponent(const Model& model);
 
-			virtual void draw(Entity& entity,
-							  std::shared_ptr<Renderer> renderer);
+			virtual void update(Entity& entity,
+								std::shared_ptr<GameInterface> game);
 
 			Model getModel() const;
 

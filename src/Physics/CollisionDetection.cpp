@@ -4,238 +4,21 @@
 //https://www.youtube.com/watch?v=ajv46BSqcK4
 namespace Physics
 {
-	AABB::AABB()
-	{}
-
-	AABB::AABB(const Vec& center, const Vec& width)
-			: center(center), mass(0.0)
+	std::vector<Vec> ColliderFromMesh(const Elysium::MeshData& mesh)
 	{
-		Real maxWidth = width(0)*1.5;
-		for(int i = 1; i<DIMENSION; i++)
+		std::vector<Vec> positions;
+		for(Elysium::Vertex vertex : mesh.vertices)
 		{
-			maxWidth = std::max(maxWidth, width(i)*1.5);
-		}
-		for(int i = 0; i<DIMENSION; i++)
-		{
-			halfWidth = maxWidth;
-		}
-	}
+			Vec v;
+			v(0) = vertex.x;
+			v(1) = vertex.y;
+			if(DIMENSION == 3)
+				v(2) = vertex.z;
 
-	void AABB::refit(const AABB& v1, const AABB& v2)
-	{
-		for(int i = 0; i<DIMENSION; i++)
-		{
-			Real minBound = std::min(
-					v1.center(i)-v1.halfWidth(i)
-					+std::min(v1.margin(i),0.0),
-					v2.center(i)-v2.halfWidth(i)
-					+std::min(v2.margin(i),0.0));
-			Real maxBound = std::max(
-					v1.center(i)+v1.halfWidth(i)
-					+std::max(v1.margin(i),0.0),
-					v2.center(i)+v2.halfWidth(i)
-					+std::max(v2.margin(i),0.0));
-
-			center(i)    = (maxBound + minBound) * 0.5;
-			halfWidth(i) = (maxBound - minBound) * 0.5;
+			positions.push_back(v);
 		}
 
-		mass = v1.mass + v2.mass;
-		if(mass > 0)
-		{
-			cog = v1.cog * (v1.mass/mass)+ v2.cog * (v2.mass/mass);
-			Vec dr = v1.cog - v2.cog;
-			Real weight = 2.0*std::max(v1.mass, v2.mass)/mass;
-			gravityWidth = dot(dr,dr)*(weight*weight);
-		}
-	}
-
-	bool AABB::isInside(const AABB& v) const
-	{
-		for(int i = 0; i<DIMENSION; i++)
-		{
-			if(std::abs(center(i)-v.center(i))+halfWidth(i) 
-						> v.halfWidth(i)) return false;
-		}
-		return true;
-	}
-
-	/** AABB to AABB intersection **/ 
-	bool AABB::intersects(const AABB& other) const
-	{
-		for(int i = 0; i<DIMENSION; i++)
-			if(std::abs(center(i)-other.center(i)) > 
-			   halfWidth(i) + other.halfWidth(i)) return false;
-		
-		return true;
-	}
-
-	Real AABB::getUnionArea(const AABB& s1) const
-	{
-		AABB aabb(center, halfWidth);
-		aabb.refit(aabb, s1);
-		return aabb.getArea();
-	}
-
-	Real AABB::getArea() const
-	{
-		Real A = 1.0;
-		for(int i = 0; i<DIMENSION; i++)
-			A *= 2.0*halfWidth(i);
-
-		return A;
-	}
-
-	void AABB::setPosition(const Vec& position)
-	{
-		center = position;
-		cog = position;
-		update();
-	}
-
-	void AABB::setSize(const Vec& width)
-	{
-		Real maxWidth = width(0)*1.5;
-		for(int i = 1; i<DIMENSION; i++)
-		{
-			maxWidth = std::max(maxWidth, width(i)*1.5);
-		}
-		for(int i = 0; i<DIMENSION; i++)
-		{
-			halfWidth = maxWidth;
-		}
-	}
-
-	void AABB::setMargin(const Vec& v)
-	{
-		margin = v;
-	}
-
-	void AABB::draw(const Vec3& color)
-	{
-		Debug.drawBox(center, halfWidth, color);
-	}
-
-	Real AABB::getBarneHutRatio(const Vec& dr) const
-	{
-		Real d2 = dot(dr, dr);
-		return gravityWidth/d2;
-	}
-
-	Vec AABB::getCoG() const
-	{
-		return cog;
-	}
-
-	Real AABB::getMass() const
-	{
-		return mass;
-	}
-
-	void AABB::setMass(const Real m)
-	{
-		mass = m;
-	}
-
-	Point::Point(const Vec& location) : position(location)
-	{}
-
-	bool Point::intersects(const AABB& box) const
-	{
-		for(int i = 0; i<DIMENSION; i++)
-			if(std::abs(box.center(i)-position(i)) > box.halfWidth(i))
-				return false;
-
-		return true;
-	}
-
-	Ray::Ray(const Vec& origin, const Vec& direction)
-		: origin(origin), dir(direction)
-	{}
-
-	bool Ray::intersects(const AABB& box) const
-	{
-		bool inside = true;
-		int quadrant[DIMENSION];
-		int whichPlane;
-		Vec maxT;
-		Vec candidatePlane;
-		Vec minB = box.center-box.halfWidth;
-		Vec maxB = box.center+box.halfWidth;
-		Vec coord;
-
-		for(int i = 0; i<DIMENSION; i++)
-		{
-			if(origin(i) < minB(i))
-			{
-				quadrant[i] = 1;
-				candidatePlane(i) = minB(i);
-				inside = false;
-			}
-			else if(origin(i) > maxB(i))
-			{
-				quadrant[i] = 0;
-				candidatePlane(i) = maxB(i);
-				inside = false;
-			}
-			else
-			{
-				quadrant[i] = 2;
-			}	
-		}
-
-		if(inside)
-		{
-			return true;
-		}
-
-		for(int i = 0; i<DIMENSION; i++)
-		{
-			if(quadrant[i] != 2 && dir(i) != 0.0)
-				maxT(i) = (candidatePlane(i) - origin(i)) / dir(i);
-			else
-				maxT(i) = -1.0;
-		}
-
-		whichPlane = 0;
-		for(int i = 1; i<DIMENSION; i++)
-			if(maxT(whichPlane) < maxT(i))
-				whichPlane = i;
-
-		if(maxT(whichPlane) < 0.0) return false;
-		for(int i = 0; i<DIMENSION; i++)
-		{
-			if(whichPlane != i)
-			{
-				coord(i) = origin(i) + maxT(whichPlane) * dir(i);
-				if(coord(i) < minB(i) || coord(i) > maxB(i))
-					return false;
-			}
-			else
-			{
-				coord(i) = candidatePlane(i);
-			}
-		}
-
-		return true;
-	}
-
-	Segment::Segment(const Vec& pStart, const Vec& pEnd)
-		: p0(pStart), p1(pEnd)
-	{}
-
-	bool Segment::intersects(const AABB& box) const
-	{
-		Vec minB = box.center-box.halfWidth;
-		Vec maxB = box.center+box.halfWidth;
-
-		for(int i = 0; i<DIMENSION; i++)
-		{
-			if(p0(i) < minB(i) && p1(i) < minB(i)) return false;
-			if(p0(i) > maxB(i) && p1(i) > maxB(i)) return false;
-		}
-
-		return Ray(p0, Circe::normalize(p1-p0)).intersects(box);
+		return positions;
 	}
 
 	Collider::Collider()
@@ -257,8 +40,12 @@ namespace Physics
 		m_radius = 0.0;
 		for(Vec p : points)
 		{
-			m_points.push_back(p - center);
-			m_radius = std::max(std::sqrt(dot(p-center,p-center)),m_radius);
+			Vec newPos= p - center;
+			for(int i = 0; i<DIMENSION; i++) 
+				newPos(i) *= transform->getScale()(i);
+
+			m_points.push_back(newPos);
+			m_radius = std::max(std::sqrt(dot(newPos,newPos)), m_radius);
 		}
 	}
 

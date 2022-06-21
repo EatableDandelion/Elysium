@@ -13,76 +13,7 @@
 
 namespace Physics
 {
-	struct AABB : public Circe::PrimitiveVolume<AABB>
-	{
-		AABB();
-
-		AABB(const Vec& center, const Vec& width);
-
-		void refit(const AABB& v1, const AABB& v2);
-
-		bool isInside(const AABB& v) const;
-
-		/** AABB to AABB intersection **/ 
-		virtual bool intersects(const AABB& other) const;
-
-		Real getUnionArea(const AABB& s1) const;
-
-		Real getArea() const;
-
-		void setPosition(const Vec& position);
-		
-		void setSize(const Vec& size);
-
-		void setMargin(const Vec& v);
-
-		void draw(const Vec3& color);
-
-		Real getBarneHutRatio(const Vec& dr) const;
-
-		Vec getCoG() const;
-
-		Real getMass() const;
-
-		void setMass(const Real m);
-
-		Vec center;
-		Vec halfWidth;
-		Vec margin;
-		Real mass;
-		Vec cog;
-		Real gravityWidth;
-	};
-
-	struct Point : public Circe::PrimitiveVolume<AABB>
-	{
-		Point(const Vec& location);
-
-		virtual bool intersects(const AABB& box) const;
-
-		Vec position;
-	};
-
-	//https://web.archive.org/web/20090803054252/http://tog.acm.org/resources/GraphicsGems/gems/RayBox.c
-	struct Ray : public Circe::PrimitiveVolume<AABB>
-	{
-		Ray(const Vec& origin, const Vec& direction);
-
-		virtual bool intersects(const AABB& box) const;
-
-		Vec origin;
-		Vec dir;
-	};
-
-	struct Segment : public Circe::PrimitiveVolume<AABB>
-	{
-		Segment(const Vec& pStart, const Vec& pEnd);
-
-		virtual bool intersects(const AABB& box) const;
-
-		Vec p0;
-		Vec p1;
-	};
+	std::vector<Vec> ColliderFromMesh(const Elysium::MeshData& mesh);
 
 	const int SHAPE_MAX_VERTICES = 200;
 

@@ -34,7 +34,7 @@ namespace Elysium
 		startTime = previous;
 		sysPrevious = previous;
 
-		while(!m_game->isTerminated() && totalTime < 10.0)
+		while(!m_game->isTerminated() && totalTime < 100.0)
 		{	
 
 			current = Time::clock::now();
@@ -50,15 +50,13 @@ namespace Elysium
 			std::cout << "\r" << "Execution time: " << elapsed 
 					  << " s           " 			<< std::flush;
 		
-//			m_context.getInput()->poll();
-
 			while(lag >= SEC_PER_FRAME)
 			{
 				sysCurrent = Time::clock::now();
 				elapsed = Time::duration(sysCurrent - sysPrevious).count();
 				sysPrevious = sysCurrent;
 
-				m_game->updateAll(elapsed);
+				m_game->updateAll(elapsed, totalTime);
 
 				lag -= SEC_PER_FRAME;
 			}
